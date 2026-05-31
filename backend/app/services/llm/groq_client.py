@@ -22,7 +22,7 @@ async def stream_chat(messages: List[Dict[str, str]]) -> AsyncGenerator[str, Non
         Individual token strings as they arrive.
     """
     headers = {
-        "Authorization": f"Bearer {settings.groq_api_key}",
+        "Authorization": f"Bearer {settings.groq_api_key.strip()}",
         "Content-Type": "application/json",
     }
     payload = {
