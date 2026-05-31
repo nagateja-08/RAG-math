@@ -27,8 +27,11 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
       - key: VITE_API_URL
         fromService:
           type: web
           name: math-gpt-backend
           envVarKey: RENDER_EXTERNAL_URL
+
