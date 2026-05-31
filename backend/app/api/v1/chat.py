@@ -19,6 +19,16 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
     if not request.message:
         raise HTTPException(status_code=400, detail="No message provided")
 
+    user_msg_lower = request.message.lower()
+    wrong_phrases = ["answer is wrong", "wrong answer", "you are wrong", "this is wrong", "incorrect answer", "incorrect"]
+    if any(phrase in user_msg_lower for phrase in wrong_phrases):
+        return {
+            "answer": "We will check it and analyse now.",
+            "context_used": [],
+            "sympy_result": None,
+            "model": settings.model_name,
+        }
+
     # Retrieve context for the current message
     user_msg = request.message
     context_chunks = retrieve_context(user_msg)
@@ -34,9 +44,9 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
         "general knowledge, current events, personal advice, etc.), you MUST politely decline and say: "
         "'I am MathGPT, a math-only assistant. I can only help with mathematics topics. "
         "Please ask me a math question!'\n"
-        "2. NEVER answer non-math questions, even if you know the answer.\n"
+        "2. NEVER answer non-math questions, even if you know the answer. Note: Word problems, logic puzzles, and statement-based questions (e.g. 'If 6 workers...') ARE mathematics. Do NOT decline them.\n"
         "3. Use the provided RAG context for math references when relevant.\n"
-        "4. When performing symbolic computation, embed a SymPy block like `$$sympy:<python code>$$`.\n"
+        "4. When performing symbolic computation, embed a valid SymPy Python code block like `$$sympy:<python code>$$`. Do NOT put natural language inside the sympy block.\n"
         "5. Always return mathematical expressions inside $$...$$ LaTeX blocks.\n"
         "6. Be precise, step-by-step, and educational in your math answers."
     )
