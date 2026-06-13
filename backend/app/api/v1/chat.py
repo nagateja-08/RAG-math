@@ -19,10 +19,44 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
     if not request.message:
         raise HTTPException(status_code=400, detail="No message provided")
 
-
-
-    # Retrieve context for the current message
     user_msg = request.message
+    
+    # Intercept queries asking about the developer/creator
+    import re
+    msg_clean = user_msg.lower().strip()
+    msg_clean = re.sub(r'[?.,\/#!$%\^&\*;:{}=\-_`~()]+$', '', msg_clean).strip()
+    
+    is_dev_query = False
+    if "nagateja" in msg_clean or "naga teja" in msg_clean:
+        is_dev_query = True
+    else:
+        exact_shorts = {
+            "who developed", "who created", "who programmed", "who built", "who designed", 
+            "who made", "who is developer", "who is creator", "who is programmer", 
+            "who is maker", "developer", "creator", "programmer", "who developed by", 
+            "developed by who", "created by who", "built by who"
+        }
+        if msg_clean in exact_shorts:
+            is_dev_query = True
+        else:
+            nouns = r'\b(developer|creator|creation|maker|programmer|owner|author|architect)\b'
+            verbs = r'\b(develop|developed|create|created|make|made|build|built|design|designed|program|programmed|code|coded|write|wrote|written)\b'
+            referents = r'\b(you|your|this|app|bot|assistant|website|system|software|model|ai|mathgpt|name)\b'
+            
+            has_referent = bool(re.search(referents, msg_clean))
+            has_creator_noun = bool(re.search(nouns, msg_clean))
+            has_creator_verb = bool(re.search(verbs, msg_clean))
+            
+            if has_referent and (has_creator_noun or has_creator_verb):
+                is_dev_query = True
+            
+    if is_dev_query:
+        return {
+            "answer": "NAGATEJA",
+            "context_used": [],
+            "sympy_result": None,
+            "model": settings.model_name
+        }
     context_chunks = retrieve_context(user_msg)
     context = format_context(context_chunks)
 
@@ -48,7 +82,8 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
         "`$$sympy:<python code>$$`. Do NOT put natural language inside the sympy block.\n"
         "7. Always return mathematical expressions inside $$...$$ LaTeX blocks.\n"
         "8. Be precise, step-by-step, and educational in your math answers.\n"
-        "9. Have a warm personality. You can use emojis occasionally. Make users feel welcome."
+        "9. Have a warm personality. You can use emojis occasionally. Make users feel welcome.\n"
+        "10. **Developer/Creator**: If the user asks who developed you, who created you, who made you, or any related questions, you MUST answer 'NAGATEJA'."
     )
 
     messages: List[Dict[str, str]] = [
