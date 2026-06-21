@@ -9,11 +9,11 @@ import pandas as pd
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 # Add parent to path
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 from app.core.config import get_settings
+from app.services.rag.retriever import get_embeddings
 
 settings = get_settings()
 
@@ -130,10 +130,7 @@ def build_faiss_index(chunks: list, embedding_model: str, save_path: str):
     print(f"\n[EMBED] Building FAISS index with model: {embedding_model}")
     print("  (This may take several minutes...)")
 
-    embeddings = HuggingFaceInferenceAPIEmbeddings(
-        api_key=settings.hf_api_key,
-        model_name=f"sentence-transformers/{embedding_model}",
-    )
+    embeddings = get_embeddings()
 
     # Build FAISS from texts in batches
     batch_size = 1000

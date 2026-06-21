@@ -6,19 +6,54 @@ Uses HuggingFace Inference API for embeddings to minimize memory usage.
 
 import os
 from pathlib import Path
+from groq import Groq
+from langchain_core.embeddings import Embeddings
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from ...core.config import get_settings
 
 settings = get_settings()
 _vectorstore = None
 
 
-def _get_embeddings():
-    """Create HuggingFace Inference API embeddings (no local model needed)."""
-    return HuggingFaceInferenceAPIEmbeddings(
-        api_key=settings.hf_api_key,
-        model_name=f"sentence-transformers/{settings.embedding_model}",
+class GroqEmbeddings(Embeddings):
+    """Custom wrapper for Groq's high-speed embeddings API."""
+    def __init__(self, model_name: str, api_key: str):
+        self.client = Groq(api_key=api_key)
+        self.model_name = model_name
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        try:
+            response = self.client.embeddings.create(
+                model=self.model_name,
+                input=texts
+            )
+            return [data.embedding for data in response.data]
+        except Exception as e:
+            # Fallback to single requests if list fails or is too large
+            embeddings = []
+            for text in texts:
+                response = self.client.embeddings.create(
+                    model=self.model_name,
+                    input=text
+                )
+                embeddings.append(response.data[0].embedding)
+            return embeddings
+
+    def embed_query(self, text: str) -> list[float]:
+        response = self.client.embeddings.create(
+            model=self.model_name,
+            input=text
+        )
+        return response.data[0].embedding
+
+
+def get_embeddings():
+    """Create Groq embeddings."""
+    return GroqEmbeddings(
+        api_key=settings.groq_api_key.strip(),
+        model_name=settings.embedding_model,
     )
 
 
@@ -34,7 +69,7 @@ def get_vectorstore():
             )
 
         print(f"[INFO] Loading FAISS index from: {index_path}")
-        embeddings = _get_embeddings()
+        embeddings = get_embeddings()
         _vectorstore = FAISS.load_local(
             index_path,
             embeddings,
