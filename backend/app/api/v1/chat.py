@@ -19,49 +19,92 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
     if not request.message:
         raise HTTPException(status_code=400, detail="No message provided")
 
-    user_msg_lower = request.message.lower()
-    wrong_phrases = ["answer is wrong", "wrong answer", "you are wrong", "this is wrong", "incorrect answer", "incorrect"]
-    if any(phrase in user_msg_lower for phrase in wrong_phrases):
+    user_msg = request.message
+    
+    # Intercept queries asking about the developer/creator
+    import re
+    msg_clean = user_msg.lower().strip()
+    msg_clean = re.sub(r'[?.,\/#!$%\^&\*;:{}=\-_`~()]+$', '', msg_clean).strip()
+    
+    is_dev_query = False
+    if "nagateja" in msg_clean or "naga teja" in msg_clean:
+        is_dev_query = True
+    else:
+        exact_shorts = {
+            "who developed", "who created", "who programmed", "who built", "who designed", 
+            "who made", "who is developer", "who is creator", "who is programmer", 
+            "who is maker", "developer", "creator", "programmer", "who developed by", 
+            "developed by who", "created by who", "built by who"
+        }
+        if msg_clean in exact_shorts:
+            is_dev_query = True
+        else:
+            nouns = r'\b(developer|creator|creation|maker|programmer|owner|author|architect)\b'
+            verbs = r'\b(develop|developed|create|created|make|made|build|built|design|designed|program|programmed|code|coded|write|wrote|written)\b'
+            referents = r'\b(you|your|this|app|bot|assistant|website|system|software|model|ai|mathgpt|name)\b'
+            
+            has_referent = bool(re.search(referents, msg_clean))
+            has_creator_noun = bool(re.search(nouns, msg_clean))
+            has_creator_verb = bool(re.search(verbs, msg_clean))
+            
+            if has_referent and (has_creator_noun or has_creator_verb):
+                is_dev_query = True
+            
+    if is_dev_query:
         return {
-            "answer": "We will check it and analyse now.",
+            "answer": "NAGATEJA",
             "context_used": [],
             "sympy_result": None,
-            "model": settings.model_name,
+            "model": settings.model_name
         }
-
-    # Retrieve context for the current message
-    user_msg = request.message
+    import time
+    t0 = time.time()
     context_chunks = retrieve_context(user_msg)
+    t_retrieval = time.time() - t0
     context = format_context(context_chunks)
 
     system_prompt = (
-        "You are MathGPT — a highly specialized AI assistant exclusively dedicated to mathematics. "
-        "Your ONLY area of expertise is mathematics, including: arithmetic, algebra, calculus, geometry, "
+        "You are MathGPT — a friendly and highly specialized AI assistant primarily dedicated to mathematics. "
+        "Your core expertise is mathematics, including: arithmetic, algebra, calculus, geometry, "
         "trigonometry, linear algebra, statistics, probability, number theory, discrete math, differential "
         "equations, and symbolic computation.\n\n"
-        "STRICT RULES YOU MUST FOLLOW:\n"
-        "1. If the user asks anything outside of mathematics (e.g. geography, history, biology, coding, "
-        "general knowledge, current events, personal advice, etc.), you MUST politely decline and say: "
-        "'I am MathGPT, a math-only assistant. I can only help with mathematics topics. "
-        "Please ask me a math question!'\n"
-        "2. NEVER answer non-math questions, even if you know the answer. Note: Word problems, logic puzzles, and statement-based questions (e.g. 'If 6 workers...') ARE mathematics. Do NOT decline them.\n"
-        "3. Use the provided RAG context for math references when relevant.\n"
-        "4. When performing symbolic computation, embed a valid SymPy Python code block like `$$sympy:<python code>$$`. Do NOT put natural language inside the sympy block.\n"
-        "5. Always return mathematical expressions inside $$...$$ LaTeX blocks.\n"
-        "6. Be precise, step-by-step, and educational in your math answers."
+        "RULES YOU MUST FOLLOW:\n"
+        "1. **Greetings & casual conversation**: If the user says hello, asks how you are, thanks you, "
+        "or engages in basic small talk, respond warmly and naturally like a friendly assistant. "
+        "You may briefly introduce yourself and your math capabilities. Keep it conversational and varied — "
+        "do NOT repeat the same response every time.\n"
+        "2. **Non-math knowledge questions**: If the user asks about topics outside mathematics "
+        "(e.g. geography, history, biology, physics, chemistry, engineering, finance, economics, coding, programming languages like Python, programming libraries like NumPy, Pandas, Matplotlib, TensorFlow, computer science concepts, AI, machine learning, RAG (Retrieval-Augmented Generation), or how you function, etc.), "
+        "you MUST decline in exactly 1 or 2 lines. Do NOT write any code blocks, lists, or detailed explanations.\n"
+        "3. **Refusal Format**: When declining, keep the response extremely short (1-2 lines) and state clearly: "
+        "'I am sorry, I cannot help you with that because I am only proficient in the explanation of mathematics, not topics other than that.' "
+        "Note: Word problems, logic puzzles, and statement-based questions (e.g. 'If 6 workers...') ARE mathematics. Do NOT decline them.\n"
+        "4. **No Programming Code**: Absolutely NEVER write general programming code (such as Python scripts, functions, loops, HTML, etc.) to solve or explain math. The ONLY exception is embedding a clean `$$sympy:<python code>$$` block for symbolic math calculations. If a user asks you to write code for a math problem, you MUST decline and use the refusal format.\n"
+        "5. Use the provided RAG context for math references when relevant.\n"
+        "6. When performing symbolic computation, embed a valid SymPy Python code block like "
+        "`$$sympy:<python code>$$`. Do NOT put natural language inside the sympy block.\n"
+        "7. Always return mathematical expressions inside $$...$$ LaTeX blocks.\n"
+        "8. Be precise, step-by-step, and educational in your math answers.\n"
+        "9. Have a warm personality. Use emojis occasionally. Make users feel welcome.\n"
+        "10. **Developer/Creator**: If the user asks who developed you, who created you, who made you, or any related questions, you MUST answer ' I was developed by NAGATEJA by integrating with groq api'."
     )
 
     messages: List[Dict[str, str]] = [
         {"role": "system", "content": system_prompt},
-        {"role": "assistant", "content": context},
-        {"role": "user", "content": user_msg},
     ]
+    if context.strip():
+        messages.append({"role": "system", "content": f"Here is the retrieved mathematical context to help answer the question if relevant:\n{context}"})
+    messages.append({"role": "user", "content": user_msg})
 
     # Collect streamed tokens into a full answer string
+    t_llm_start = time.time()
     answer_parts = []
     async for token in stream_chat(messages):
         answer_parts.append(token)
     answer = "".join(answer_parts)
+    t_llm = time.time() - t_llm_start
+
+    print(f"[PROFILE] Retrieval: {t_retrieval:.4f}s | LLM Generation: {t_llm:.4f}s | Total: {t_retrieval + t_llm:.4f}s")
 
     sympy_result = None
     if request.use_sympy:

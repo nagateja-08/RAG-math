@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     groq_api_key: str = "your_groq_api_key_here"
     hf_api_key: str = ""
     model_name: str = "llama-3.3-70b-versatile"
-    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_model: str = "nomic-embed-text-v1.5"
     vector_store_path: str = str(_BACKEND_DIR / "vector_store")
     data_path: str = str(_BACKEND_DIR / "data")
     chunk_size: int = 512
