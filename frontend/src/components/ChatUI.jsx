@@ -231,7 +231,7 @@ const ChatUI = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans antialiased">
+    <div className="flex h-screen w-screen bg-black text-slate-100 overflow-hidden font-sans antialiased">
       
       {/* Hidden file input (still needed for the + button in the input bar) */}
       <input
@@ -244,14 +244,14 @@ const ChatUI = () => {
       />
 
       {/* 2. CHAT CANVAS */}
-      <main className="flex-1 flex flex-col justify-between bg-slate-950 relative overflow-hidden">
+      <main className="flex-1 flex flex-col justify-between bg-black relative overflow-hidden">
         
         {/* Glowing Decorative Orbs */}
         <div className="absolute top-[-20%] left-[20%] w-[500px] h-[500px] rounded-full bg-sky-600/5 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[10%] w-[450px] h-[450px] rounded-full bg-indigo-600/5 blur-[120px] pointer-events-none" />
 
         {/* Diagnostic Top Header */}
-        <header className="h-14 border-b border-slate-800/40 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-6 z-10 select-none">
+        <header className="h-14 border-b border-slate-800/40 bg-black/80 backdrop-blur-md flex items-center justify-between px-6 z-10 select-none">
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-slate-300">Mathematical RAG Assistant</span>
             <span className="px-2 py-0.5 bg-sky-950 border border-sky-900 text-sky-400 rounded-full text-[10px] font-mono tracking-wider font-semibold">
@@ -265,11 +265,12 @@ const ChatUI = () => {
         </header>
 
         {/* Message Scrolling Body */}
-        <div className="flex-1 overflow-y-auto z-10">
+        <div className="flex-1 z-10 overflow-hidden">
           <ScrollToBottom 
-            className="h-full flex flex-col" 
-            scrollViewClassName="px-4 py-8 max-w-3xl w-full mx-auto space-y-6 flex flex-col"
+            className="h-full w-full" 
+            scrollViewClassName="h-full w-full overflow-y-auto"
           >
+            <div className="max-w-3xl w-full mx-auto px-4 py-8 space-y-6 flex flex-col">
             {messages.map((msg, idx) => {
               const isUser = msg.role === 'user';
               const { thought, response } = parseMessageContent(msg.content);
@@ -387,28 +388,11 @@ const ChatUI = () => {
                 </div>
               );
             })}
+            </div>
           </ScrollToBottom>
         </div>
 
-        {/* Suggestion Cards Container (Visible on empty chat) */}
-        {messages.length <= 1 && (
-          <div className="max-w-3xl w-full mx-auto px-6 mb-2 z-10 grid grid-cols-2 gap-3 select-none">
-            {SUGGESTIONS.map((sug, idx) => (
-              <div 
-                key={idx}
-                onClick={() => handleSend(sug.prompt)}
-                className="bg-slate-900 hover:bg-slate-850 hover:border-slate-700/60 border border-slate-800/50 p-3 rounded-xl cursor-pointer transition-all flex flex-col text-left group"
-              >
-                <div className="flex justify-between items-start">
-                  <span className="text-lg mb-1">{sug.icon}</span>
-                  <ChevronRight size={14} className="text-slate-600 group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <h4 className="text-xs font-semibold text-slate-200 mb-0.5">{sug.title}</h4>
-                <p className="text-[10px] text-slate-500 font-mono tracking-tight font-medium truncate">{sug.prompt}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Suggestion Cards removed per user request */}
 
         {/* Diagnostic Errors */}
         {error && (
@@ -421,7 +405,7 @@ const ChatUI = () => {
         )}
 
         {/* elevated Input box resembling ChatGPT */}
-        <footer className="p-6 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent z-10 shrink-0 select-none">
+        <footer className="p-6 bg-gradient-to-t from-black via-black to-transparent z-10 shrink-0 select-none">
           <div className="max-w-3xl w-full mx-auto space-y-3">
             
             <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex items-end p-2.5 focus-within:ring-2 focus-within:ring-sky-500/10 focus-within:border-sky-500/50 transition-all">
