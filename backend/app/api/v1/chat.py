@@ -57,7 +57,10 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
             "sympy_result": None,
             "model": settings.model_name
         }
+    import time
+    t0 = time.time()
     context_chunks = retrieve_context(user_msg)
+    t_retrieval = time.time() - t0
     context = format_context(context_chunks)
 
     system_prompt = (
@@ -82,7 +85,7 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
         "`$$sympy:<python code>$$`. Do NOT put natural language inside the sympy block.\n"
         "7. Always return mathematical expressions inside $$...$$ LaTeX blocks.\n"
         "8. Be precise, step-by-step, and educational in your math answers.\n"
-        "9. Have a warm personality. You can use emojis occasionally. Make users feel welcome.\n"
+        "9. Have a warm personality. Use emojis occasionally. Make users feel welcome.\n"
         "10. **Developer/Creator**: If the user asks who developed you, who created you, who made you, or any related questions, you MUST answer ' I was developed by NAGATEJA by integrating with groq api'."
     )
 
@@ -94,10 +97,14 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
     messages.append({"role": "user", "content": user_msg})
 
     # Collect streamed tokens into a full answer string
+    t_llm_start = time.time()
     answer_parts = []
     async for token in stream_chat(messages):
         answer_parts.append(token)
     answer = "".join(answer_parts)
+    t_llm = time.time() - t_llm_start
+
+    print(f"[PROFILE] Retrieval: {t_retrieval:.4f}s | LLM Generation: {t_llm:.4f}s | Total: {t_retrieval + t_llm:.4f}s")
 
     sympy_result = None
     if request.use_sympy:

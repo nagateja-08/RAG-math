@@ -8,11 +8,10 @@ import tempfile
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 
 from ...core.config import get_settings
-from ...services.rag.retriever import get_vectorstore
+from ...services.rag.retriever import get_vectorstore, get_embeddings
 from ...models.schemas import UploadResponse
 
 router = APIRouter()
@@ -54,7 +53,7 @@ async def upload_document(file: UploadFile = File(...)):
 
         # Add to vectorstore
         vs = get_vectorstore()
-        embeddings = HuggingFaceEmbeddings(model_name=settings.embedding_model)
+        embeddings = get_embeddings()
         new_store = FAISS.from_texts(chunks, embeddings)
         vs.merge_from(new_store)
         vs.save_local(settings.vector_store_path)
