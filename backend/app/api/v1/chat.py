@@ -94,6 +94,10 @@ async def chat_endpoint(request: ChatRequest) -> Dict:
     ]
     if context.strip():
         messages.append({"role": "system", "content": f"Here is the retrieved mathematical context to help answer the question if relevant:\n{context}"})
+    # Inject conversation history for multi-turn memory
+    if request.history:
+        for h in request.history:
+            messages.append({"role": h.role, "content": h.content})
     messages.append({"role": "user", "content": user_msg})
 
     # Collect streamed tokens into a full answer string

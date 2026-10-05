@@ -1,0 +1,20 @@
+# Environment variables — NEVER commit real keys
+.env
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# FAISS vector store (built locally, not tracked in git)
+vector_store/
+
+# Dataset CSVs (too large for git)
+data/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/

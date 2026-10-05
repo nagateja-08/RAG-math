@@ -16,7 +16,7 @@ services:
       - key: MODEL_NAME
         value: llama-3.3-70b-versatile
       - key: EMBEDDING_MODEL
-        value: all-MiniLM-L6-v2
+        value: sentence-transformers/all-MiniLM-L6-v2
       - key: VECTOR_STORE_PATH
         value: ./vector_store
       - key: DATA_PATH

@@ -5,4 +5,6 @@ start cmd /k "cd backend && call .venv\Scripts\activate && uvicorn app.main:app 
 echo Starting Frontend...
 start cmd /k "cd frontend && npm run dev"
 
-echo Application started! The frontend and backend are running in new windows.
+echo Both servers started!
+echo   Backend:  http://localhost:8000
+echo   Frontend: http://localhost:5173
