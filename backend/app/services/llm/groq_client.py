@@ -29,6 +29,30 @@ async def stream_chat(messages: List[Dict[str, str]]) -> AsyncGenerator[str, Non
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             async with client.stream("POST", API_URL, headers=headers, json=payload) as response:
+                if response.status_code == 404:
+                    # Model not found / unavailable on this API key — fall back to universally supported model
+                    print(f"[GROQ WARN] Model '{payload['model']}' 404. Falling back to 'llama-3.1-8b-instant'...")
+                    payload["model"] = "llama-3.1-8b-instant"
+                    async with client.stream("POST", API_URL, headers=headers, json=payload) as fallback_resp:
+                        if fallback_resp.status_code != 200:
+                            err_text = (await fallback_resp.aread()).decode("utf-8", errors="ignore")
+                            yield f"⚠️ **Groq API Error ({fallback_resp.status_code})**: {err_text}"
+                            return
+                        async for line in fallback_resp.aiter_lines():
+                            if line.startswith("data: "):
+                                data = line[6:]
+                                if data == "[DONE]":
+                                    break
+                                try:
+                                    chunk = json.loads(data)
+                                    delta = chunk.get("choices", [{}])[0].get("delta", {})
+                                    content = delta.get("content")
+                                    if content:
+                                        yield content
+                                except json.JSONDecodeError:
+                                    continue
+                        return
+
                 if response.status_code != 200:
                     error_body = await response.aread()
                     err_text = error_body.decode("utf-8", errors="ignore")
