@@ -248,12 +248,8 @@ export default function ChatUI() {
             fontSize: '1.3rem',
           }}>Σ</div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="gradient-text" style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.3px' }}>MathGPT</span>
-              <span style={{
-                fontSize: '0.65rem', background: 'rgba(79,142,247,0.12)', color: '#7cb4ff',
-                border: '1px solid rgba(79,142,247,0.3)', borderRadius: 20, padding: '1px 8px', fontWeight: 700, letterSpacing: '0.3px'
-              }}>Graph-Enhanced RAG v2.0</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span className="gradient-text" style={{ fontWeight: 800, fontSize: '1.15rem', letterSpacing: '-0.3px' }}>MathGPT</span>
             </div>
           </div>
         </div>
@@ -496,7 +492,7 @@ export default function ChatUI() {
                     <div className="dot-pulse" style={{ display: 'flex', gap: 5 }}>
                       <span /><span /><span />
                     </div>
-                    <span>Traversing Knowledge Graph &amp; verifying with SymPy…</span>
+                    <span>Solving…</span>
                   </div>
                 </div>
               )}
