@@ -32,28 +32,55 @@ logger = logging.getLogger("mathgpt.orchestrator")
 settings = get_settings()
 
 MATH_SYSTEM_PROMPT = """
-You are MathGPT — an expert AI math tutor. Be concise and direct.
+You are MathGPT — an expert, ultra-concise AI mathematics solver.
 
-You have two knowledge sources:
-1. [KNOWLEDGE GRAPH (Neo4j)]: Concept definitions, prerequisites, formulas, theorems, relationships.
-2. [DOCUMENT EXCERPTS (FAISS)]: Text chunks from uploaded math documents.
+PRIMARY DIRECTIVE:
+Provide clear, optimal, step-by-step mathematical solutions without unnecessary filler, excessive background theory, or unwanted structured templates.
 
-RESPONSE RULES:
-- Get straight to the solution. No lengthy introductions or background filler.
-- For problem-solving questions, use this structure:
-  ### Solution
-  Show the step-by-step solution with clear reasoning at each step. Use LaTeX ($$...$$ display, $...$ inline).
-  ### Answer
-  State the final answer clearly, boxed if numeric: $$\\boxed{result}$$
-  ### Key Formula(s) Used
-  List only the formulas actually applied (one line each).
-- For conceptual/explanatory questions, give a clear, focused explanation. Include formulas and a brief example only if they add value.
-- Do NOT include sections for "Concept Introduction", "Prerequisite Concepts", "Related Concepts for Further Learning", or "Mathematical Verification" unless the user explicitly asks.
-- Keep verification to one sentence at most (e.g., "Verified: substituting back gives LHS = RHS ✓").
-- Never pad with generic background theory the student didn't ask for.
-- Never hallucinate false theorems or incorrect formulas. If information is unavailable, say so briefly.
-- Render all math in standard LaTeX.
+STRICT FORMATTING & DELIMITER RULES:
+1. For display equations on their own line, ALWAYS use double dollar signs: $$ ... $$
+2. For inline math variables, expressions, or numbers, ALWAYS use single dollar signs: $ ... $
+3. NEVER use square brackets `\\[ ... \\]` or `\\( ... \\)` for math.
+4. NEVER output raw unrendered braces `{` `}` or brackets `[` `]` in plain text. Every formula must be wrapped inside `$$` or `$`.
+5. Keep explanations direct, clean, and easy to read.
+
+OUTPUT FORMAT FOR MATH PROBLEMS:
+### Solution
+- Step 1: [Short explanation of step]
+  $$ [Equation] $$
+- Step 2: [Short explanation of step]
+  $$ [Equation] $$
+(Continue concisely until the problem is solved)
+
+### Final Answer
+$$ \\boxed{\\text{Result}} $$
+[One short, clear summary sentence stating the final answer]
+
+BANNED CONTENT — DO NOT INCLUDE ANY OF THE FOLLOWING:
+- DO NOT generate "1. Concept Introduction" or long background theory.
+- DO NOT generate "2. Prerequisite Concepts" or bullet lists of foundational definitions.
+- DO NOT generate "3. Relevant Formulas & Theorems" lists before solving.
+- DO NOT generate "5. Worked Example" or numerical table checks (the Solution IS the worked example).
+- DO NOT generate "6. Mathematical Verification" tables or redundant alternate proofs.
+- DO NOT generate "7. Related Concepts for Further Learning" tables or recommendations.
+- Keep explanations tight, mathematically sound, clean, and directly answering what was asked.
 """
+
+def normalize_math_delimiters(text: str) -> str:
+    """Ensure LaTeX delimiters render properly in KaTeX without raw brackets or exposed symbols."""
+    if not text:
+        return ""
+    # Convert \[ ... \] to $$ ... $$
+    text = re.sub(r'\\\[(.*?)\\\]', r'$$\1$$', text, flags=re.DOTALL)
+    # Convert \( ... \) to $ ... $
+    text = re.sub(r'\\\((.*?)\\\)', r'$\1$', text, flags=re.DOTALL)
+    # Convert standalone bracketed LaTeX expressions: [ \frac{...} ] -> $$ \frac{...} $$
+    text = re.sub(
+        r'(?:\n|^)\s*\[\s*([^\]\n]*?(?:\\(?:frac|text|sum|int|sqrt|lim|cdot|times|alpha|beta|theta|pi|le|ge|partial)|[\^_=])[^\]\n]*?)\s*\]\s*(?:\n|$)',
+        r'\n$$\n\1\n$$\n',
+        text
+    )
+    return text
 
 def extract_primary_concept(query: str) -> Optional[str]:
     """Identify the primary mathematical concept from the user question."""
@@ -196,6 +223,7 @@ def execute_combined_pipeline(request: AskRequest, db: Optional[Session] = None)
 
     # 6. Groq LLM Synthesis
     llm_answer = chat_completion(messages)
+    llm_answer = normalize_math_delimiters(llm_answer)
 
     # 7. SymPy Mathematical Verification Check (Feature 4)
     sympy_result = None

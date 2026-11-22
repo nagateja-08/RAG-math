@@ -56,12 +56,25 @@ const QUICK_MATH_SYMBOLS = [
   { label: 'P(A|B)', insert: 'P(A|B) = \\frac{P(A \\cap B)}{P(B)}' },
 ];
 
+/* ─── Math Content Formatter for KaTeX ───────────────────────── */
+function formatMathContent(content) {
+  if (!content) return '';
+  let text = content;
+  // Convert \[ ... \] to $$ ... $$
+  text = text.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `\n$$\n${math.trim()}\n$$\n`);
+  // Convert \( ... \) to $ ... $
+  text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => `$${math.trim()}$`);
+  // Convert unescaped [ \frac{...} ] blocks to $$ \frac{...} $$
+  text = text.replace(/(?:^|\n)\s*\[\s*([^\]\n]+?(?:\\(?:frac|text|sum|int|sqrt|lim|cdot|times|alpha|beta|theta|pi|le|ge|partial)|[\^_=])[^\]\n]*?)\s*\](?:\s*\.?)(?=\n|$)/g, '\n$$\n$1\n$$\n');
+  return text;
+}
+
 /* ─── Starter Suggestions ───────────────────────────────────── */
 const SUGGESTIONS = [
-  { title: 'Explain Integration', prompt: 'Explain Integration, its prerequisites, fundamental formulas, and a worked example with verification.', tag: 'Calculus', icon: '∫' },
-  { title: 'Differentiate & Verify', prompt: 'Find the derivative of f(x) = x^3 - 4x + sin(x) and verify it mathematically.', tag: 'Derivatives', icon: 'd/dx' },
-  { title: 'Solve Quadratic', prompt: 'Solve the equation x^2 - 5x + 6 = 0 step-by-step and show roots.', tag: 'Algebra', icon: 'x²' },
-  { title: 'Bayes Theorem', prompt: 'Explain Bayes Theorem and its prerequisites in probability with a concrete example.', tag: 'Probability', icon: 'P(A|B)' },
+  { title: 'Explain Integration', prompt: 'Explain Integration and show how to evaluate a definite integral step-by-step.', tag: 'Calculus', icon: '∫' },
+  { title: 'Differentiate & Verify', prompt: 'Find the derivative of f(x) = x^3 - 4x + sin(x) step-by-step.', tag: 'Derivatives', icon: 'd/dx' },
+  { title: 'Solve Quadratic', prompt: 'Solve the equation x^2 - 5x + 6 = 0 step-by-step and show the roots.', tag: 'Algebra', icon: 'x²' },
+  { title: 'Bayes Theorem', prompt: 'Explain Bayes Theorem with a concise numerical example.', tag: 'Probability', icon: 'P(A|B)' },
 ];
 
 /* ─── NAV TABS ───────────────────────────────────────────────── */
@@ -359,7 +372,7 @@ export default function ChatUI() {
                         </div>
                         <div style={{ color: '#f1f5f9', fontSize: '0.82rem', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(10,14,26,0.6)', padding: '0.4rem 0.6rem', borderRadius: 6 }}>
                           <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                            {msg.extracted_question}
+                            {formatMathContent(msg.extracted_question)}
                           </ReactMarkdown>
                         </div>
                       </div>
@@ -368,7 +381,7 @@ export default function ChatUI() {
                     {msg.content && (
                       <div className="prose-math" style={{ fontSize: '0.875rem' }}>
                         <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                          {msg.content}
+                          {formatMathContent(msg.content)}
                         </ReactMarkdown>
                       </div>
                     )}
