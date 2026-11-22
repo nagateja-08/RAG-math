@@ -1,35 +1,21 @@
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  darkMode: 'class',
+/**
+ * Tailwind CSS configuration for MathGPT frontend.
+ * Enables dark mode via class strategy and includes a custom gradient.
+ */
+module.exports = {
+  darkMode: 'class', // use 'class' to toggle dark mode manually
+  content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
-        },
-        slate: {
-          850: '#151e2e',
-          925: '#0c1322',
-        }
+        primary: '#0ea5e9', // teal-500
+        surface: '#111827', // gray-900
+        background: '#1f2937', // gray-800
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-      }
+      backgroundImage: {
+        'gradient-dark': 'radial-gradient(at top left, #1f2937, #111827)',
+      },
     },
   },
   plugins: [],
-}
+};

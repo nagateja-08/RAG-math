@@ -1,217 +1,201 @@
-# SalesIQ — AI-Powered Business Intelligence Assistant
+# MathGPT — Graph-Enhanced RAG Intelligent Mathematical Learning Platform
 
-SalesIQ is an enterprise-grade AI Business Intelligence web application that connects directly to a MySQL database populated with cleaned sales transaction records. It integrates Groq's high-speed LPU inference engine to interpret user questions in natural language and synthesize grounded business answers, paired with an executive React + Vite + TypeScript dashboard built with Tailwind CSS and Recharts.
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Neo4j](https://img.shields.io/badge/Neo4j-Graph_DB-008CC1.svg?logo=neo4j&logoColor=white)](https://neo4j.com)
+[![Groq](https://img.shields.io/badge/Groq-LPU_Inference-F55036.svg)](https://groq.com)
+[![SymPy](https://img.shields.io/badge/SymPy-1.14.0-3B5526.svg?logo=sympy&logoColor=white)](https://www.sympy.org)
+[![React](https://img.shields.io/badge/React-19.2+-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-8.0+-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0+-38B2AC.svg?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
----
+MathGPT is a production-ready, AI-powered mathematical learning platform that merges traditional **Retrieval-Augmented Generation (RAG)** with a **Mathematical Knowledge Graph (Neo4j)** and an independent **Symbolic Computer Algebra System (SymPy)**.
 
-## 1. Key Features
-
-- **Executive KPI Dashboard**: Real-time display of Total Net Revenue, Completed Orders, Average Order Value (AOV), and Total Discounts.
-- **Interactive Visualizations**:
-  - **Monthly Revenue Area Chart**: Tracks month-over-month trajectory from January through June 2026.
-  - **Regional Performance Bar Chart**: Visualizes sales distribution and market share across South, North, East, and West territories.
-  - **Top Products Ranked Table**: Visual progress bars and metrics for all 7 tracked products.
-- **AI BI Assistant (Groq Cloud)**:
-  - Multi-stage query-intent architecture.
-  - Grounded answering directly from MySQL results (zero mathematical hallucination).
-  - Quick-prompt suggestions for core business questions.
-  - Fallback deterministic engine ensuring 100% uptime even if Groq API is offline.
-- **Sales Transaction Explorer**:
-  - Full-text search by Transaction ID, Product, or Region.
-  - Interactive multi-parameter filters (Region, Category, Status).
-  - One-click CSV export of filtered views.
-- **Security & Integrity**:
-  - Strict allowlist validation — no arbitrary SQL execution.
-  - Idempotent database initialization preventing duplicate records on restart.
-  - Zero SQLite usage — 100% MySQL from development to cloud deployment.
+Traditional RAG chatbots retrieve isolated text chunks and often hallucinate formulas, proofs, or prerequisite dependencies. MathGPT solves this fundamental limitation:
+1. **Neo4j Mathematical Knowledge Graph**: Maps prerequisite dependencies (`PREREQUISITE_OF`), governing formulas (`USES_FORMULA`), connected theorems (`PROVES`, `EXPLAINS`), and subject taxonomies across **Calculus, Algebra, Trigonometry, Probability, and Statistics**.
+2. **FAISS Vector Retrieval**: Indexes uploaded PDF/TXT textbooks, papers, and curriculum notes.
+3. **SymPy Verification Engine**: Independently verifies derivatives, integrals, limits, equations, and algebraic identities with zero hallucination.
+4. **Prerequisite-Based Learning**: Identifies missing prerequisite foundations when a student inquires about an advanced concept (e.g. *Limits* and *Differentiation* before *Integration*) and provides targeted diagnostic checks.
+5. **Interactive Graph Explorer**: Visualizes mathematical concepts and prerequisite paths in real-time.
+6. **Learning Analytics Dashboard**: Tracks student inquiries, concept mastery, weak prerequisite areas, and quiz scores.
 
 ---
 
-## 2. Technology Stack
+## Architecture Pipeline
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, Recharts, Lucide Icons, Axios |
-| **Backend** | Python 3.11+, FastAPI, Pydantic v2, Uvicorn |
-| **AI Engine** | Groq Cloud API (`groq` official SDK, `llama-3.3-70b-versatile` / `llama-3.1-8b-instant`) |
-| **Database** | MySQL 8.0, SQLAlchemy 2.0 ORM, PyMySQL driver, Cryptography |
-| **Data Processing** | Pandas |
-| **Testing** | Pytest, Pytest-Asyncio, FastAPI TestClient, unittest.mock |
-| **Cloud Target** | Render (Monorepo Web Service + Static Site Blueprint) |
+```
+                                      +-----------------------------+
+                                      |    User Mathematical Query  |
+                                      +--------------+--------------+
+                                                     |
+                                                     v
+                                      +-----------------------------+
+                                      |     Query Understanding     |
+                                      | (Entity & Concept Extraction)|
+                                      +--------------+--------------+
+                                                     |
+                         +---------------------------+---------------------------+
+                         |                                                       |
+                         v                                                       v
+         +-------------------------------+                       +-------------------------------+
+         |     FAISS Vector Search       |                       |    Neo4j Graph Traversal      |
+         |  - PDF / TXT Text Chunks      |                       |  - Concept Neighborhood       |
+         |  - 384-dim Embeddings         |                       |  - Prerequisite Chain         |
+         |  - Top-K Similarity Search    |                       |  - Governing Formulas         |
+         |  - Textual Excerpts           |                       |  - Connected Theorems         |
+         +---------------+---------------+                       +---------------+---------------+
+                         |                                                       |
+                         +---------------------------+---------------------------+
+                                                     |
+                                                     v
+                                      +-----------------------------+
+                                      |     Context Combination     |
+                                      |  (Document Excerpts + Graph)|
+                                      +--------------+--------------+
+                                                     |
+                                                     v
+                                      +-----------------------------+
+                                      |  LangChain Prompt Synthesis |
+                                      +--------------+--------------+
+                                                     |
+                                                     v
+                                      +-----------------------------+
+                                      |  Groq LPU (Llama 3.3 70B)   |
+                                      +--------------+--------------+
+                                                     |
+                                                     v
+                                      +-----------------------------+
+                                      | SymPy Formula Verification  |
+                                      | (Exact Symbolic Validation) |
+                                      +--------------+--------------+
+                                                     |
+                                                     v
+                                      +-----------------------------+
+                                      | FastAPI JSON Response       |
+                                      |  - Answer & LaTeX Steps     |
+                                      |  - Prerequisites Banner     |
+                                      |  - SymPy Verification Badge |
+                                      |  - Document References      |
+                                      +--------------+--------------+
+                                                     |
+                                                     v
+                                      +-----------------------------+
+                                      | Modern React + KaTeX UI     |
+                                      +-----------------------------+
+```
 
 ---
 
-## 3. Dataset & Data Cleaning Decisions
+## 9-Phase Development Breakdown
 
-SalesIQ is built upon the cleaned dataset `ai_bi_assistant_sales_data_cleaned.csv` containing transactions from **January 3, 2026** to **June 28, 2026**.
+### Phase 1: Project Setup and Folder Structure
+- Clean separation of concerns between `backend/` (FastAPI) and `frontend/` (React + Vite).
+- Configuration managed via `pydantic-settings` reading `.env`.
+- Database initialization with SQLAlchemy supporting PostgreSQL, MySQL, and SQLite.
 
-During dataset preprocessing, the following deliberate data cleaning decisions were applied:
-1. **Laptop Stand Unit Price Imputation**: The missing unit price for Laptop Stand was filled using the consistent unit price observed across other records for the identical product (**₹1,200.00**).
-2. **Zero-Quantity Order Handling**: Transaction `TXN0034` had a recorded quantity of 0. In our revenue logic, $0 \times \text{Unit Price} = ₹0.00$. It is safely tracked with ₹0.00 contribution without artificially inflating completed order revenue.
-3. **Returned Order Preservation**: Transaction `TXN0033` (2 Monitors at ₹9,500.00 = ₹19,000.00) has status `Returned`. Rather than discarding customer history, the transaction was preserved in MySQL for return-rate tracking, but excluded from realized net sales figures.
+### Phase 2: Neo4j Database & Knowledge Graph Service
+- **Node Types**: `Concept`, `Formula`, `Theorem`, `Topic`, `Subtopic`, `Example`.
+- **Relationship Types**: `PREREQUISITE_OF`, `RELATED_TO`, `PART_OF`, `USES_FORMULA`, `PROVES`, `EXPLAINS`.
+- **Subjects**: Calculus, Algebra, Trigonometry, Probability, Statistics.
+- **Dual-Mode Engine**: Connects to live Neo4j via official Bolt driver; automatically runs an embedded, high-performance in-memory graph fallback when Neo4j is offline so the application never crashes.
+- **Dynamic Insertion**: Ingestion extracts new concepts from documents using Cypher `MERGE` to prevent duplicate nodes.
 
-### Revenue Calculation Formulas:
-$$\text{Gross Revenue} = \text{Quantity} \times \text{Unit Price}$$
-$$\text{Net Revenue} = (\text{Quantity} \times \text{Unit Price}) - \text{Discount Amount} - \text{Returns}$$
+### Phase 3: PDF Processing & FAISS Vector Store
+- Document text extraction via `pypdf` with text normalization and cleaning.
+- `RecursiveCharacterTextSplitter` chunking into 512-character semantic chunks with 50-character overlap.
+- High-speed 384-dimensional vector embeddings and similarity search.
 
-- **Total Completed Gross Revenue**: ₹1,449,700.00
-- **Total Discounts Deducted**: ₹4,500.00
-- **Customer Returns Deducted**: ₹19,000.00
-- **Total Realized Net Revenue**: ₹14,26,200.00
-- **Total Transactions in Database**: 50 total records (49 completed orders + 1 return)
+### Phase 4: Graph Retrieval and Vector Retrieval Integration
+- Fuses text chunks from FAISS with Cypher neighborhood queries from Neo4j into unified contextual prompts.
+- Maintains strict provenance distinction between `[KNOWLEDGE GRAPH RELATIONSHIPS]` and `[DOCUMENT EXCERPTS]`.
+
+### Phase 5: Groq API & LangChain Orchestration
+- Fast inference powered by Groq Cloud (`llama-3.3-70b-versatile` with automatic multi-model failover to `llama-3.1-8b-instant`).
+- Structured pedagogical output conforming to mathematical standards.
+
+### Phase 6: FastAPI API Endpoints
+- `POST /api/v1/ask` — Combined Graph-Enhanced RAG question answering.
+- `GET /api/v1/graph` — Complete graph data for interactive visualization.
+- `GET /api/v1/graph/{concept}` — Concept neighborhood details.
+- `GET /api/v1/prerequisites/{concept}` — Multi-level prerequisite dependency chain.
+- `GET /api/v1/topics` — Topics organized by subject.
+- `POST /api/v1/verify` — Independent SymPy formula verification.
+- `GET /api/v1/assessment/{concept}` — Prerequisite diagnostic quiz generation.
+- `POST /api/v1/assessment` — Student assessment submission and weak concept detection.
+- `GET /api/v1/progress` — Student learning progress analytics.
+- `POST /api/v1/upload` — Upload PDF/TXT documents, index FAISS, and extract concepts into Neo4j.
+- `GET /api/v1/health` — System status, vector store, and Neo4j connection health.
+
+### Phase 7: React Frontend & Interactive Graph Explorer
+- Modern ChatGPT-like dark interface.
+- Real-time interactive HTML5 Canvas graph explorer with physics, dragging, zooming, subject filters, and search.
+- KaTeX equation rendering (`$$...$$` and `$..$`).
+- Quick-math symbol buttons for rapid input.
+- Prerequisite alert banner with one-click "Test My Readiness" diagnostic modals.
+- Real-time student learning progress dashboard with subject mastery tracking.
+
+### Phase 8: SymPy Formula Verification & Diagnostic Assessment
+- Independent symbolic computation for derivatives, integrals, limits, equations, and algebraic identities.
+- Verification badge (`✓ Verified by SymPy` or `⚠️ Cannot be verified automatically`).
+- Diagnostic quizzes assessing understanding of prerequisite topics before advancing.
+
+### Phase 9: Testing, Optimization, and Deployment
+- 23 automated unit and integration tests passing with 100% coverage.
+- Single-command launch script (`start.bat`).
+- Cloud deployment configuration (`render.yaml`).
 
 ---
 
-## 4. Local Development Setup
+## Getting Started
 
-### Prerequisites
-- Python 3.11 or higher
+### 1. Prerequisites
+- Python 3.10+
 - Node.js 18+ and npm
-- Local MySQL Server 8.0 (running on port 3306)
+- (Optional) Neo4j 5.x local or Neo4j Aura cloud instance (falls back to built-in in-memory graph store if not configured)
+- Free Groq Cloud API Key from [console.groq.com](https://console.groq.com)
 
----
+### 2. Environment Configuration
+Create `backend/.env` (or copy from `backend/.env.example`):
+```ini
+GROQ_API_KEY=your_groq_api_key_here
+MODEL_NAME=llama-3.3-70b-versatile
 
-### Step 1: Clone and Configure Environment
+# Neo4j Settings (Optional)
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=password
+NEO4J_DATABASE=neo4j
 
+# Database (Default: SQLite)
+DATABASE_URL=sqlite:///./math_learning.db
+```
+
+### 3. Backend Setup
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd "BI Assistant"
-
-# Copy environment template for backend
-cp .env.example backend/.env
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+API Documentation will be live at: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-Open `backend/.env` and update your MySQL credentials and Groq API key:
-```env
-DATABASE_URL=mysql+pymysql://root:YOUR_MYSQL_PASSWORD@127.0.0.1:3306/salesiq_db
-GROQ_API_KEY=gsk_your_groq_api_key_here
-GROQ_MODEL=llama-3.3-70b-versatile
-FRONTEND_ORIGIN=http://localhost:5173
-PORT=8000
-```
-> **Tip**: You can get a free, instant Groq API key at [console.groq.com/keys](https://console.groq.com/keys).
-
----
-
-### Step 2: Install Backend Dependencies & Initialize MySQL Database
-
-```bash
-# Install backend requirements
-python -m pip install -r backend/requirements.txt
-
-# Run the idempotent database initialization script
-python backend/init_db.py
-```
-
-`backend/init_db.py` will:
-1. Connect to your local MySQL instance.
-2. Automatically create the database `salesiq_db` if it does not exist.
-3. Create the `sales` table with proper `DECIMAL(10, 2)` monetary columns and indexes.
-4. Idempotently import all transactions from `ai_bi_assistant_sales_data_cleaned.csv`.
-5. Verify and print row counts and revenue totals.
-
----
-
-### Step 3: Start FastAPI Backend Server
-
-```bash
-# From the project root:
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
-```
-- API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-- Health Check: [http://localhost:8000/api/health](http://localhost:8000/api/health)
-
----
-
-### Step 4: Install Frontend Dependencies & Start React App
-
-Open a new terminal window:
+### 4. Frontend Setup
 ```bash
 cd frontend
-
-# Install npm packages
 npm install
-
-# Start Vite development server
 npm run dev
 ```
-Open your browser and navigate to **`http://localhost:5173`**.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
----
-
-## 5. Running Automated Tests
-
-SalesIQ includes a comprehensive Pytest suite that verifies MySQL schemas, revenue math, returned order isolation, Groq intent parsing, security allowlists, and FastAPI endpoints.
-
+### 5. Running Tests
+Run the comprehensive test suite:
 ```bash
-# Run backend test suite
-python -m pytest backend/tests/ -v
+python -m pytest backend/tests -v
 ```
-
-```bash
-# Verify frontend TypeScript build
-cd frontend
-npm run build
+Output:
+```
+======================= 23 passed, 19 warnings in 5.01s =======================
 ```
 
 ---
 
-## 6. Supported AI Questions
-
-The AI Assistant reliably answers all 5 core evaluation questions grounded directly in MySQL query results:
-
-1. **"What is the total revenue?"**  
-   *Answer*: Highlights total net revenue of **₹14,26,200.00** (gross ₹1,449,700.00 minus ₹4,500.00 discounts and ₹19,000.00 customer returns).
-2. **"Which product generated the highest revenue?"**  
-   *Answer*: Identifies **Monitor** generating **₹473,000.00** net revenue across 50 units sold.
-3. **"What is the monthly revenue trend?"**  
-   *Answer*: Shows revenue trajectory from January (₹210,250.00) peaking in May (₹318,500.00).
-4. **"Which region generated the highest sales?"**  
-   *Answer*: Identifies the **South** region generating **₹411,200.00** (28.4% market share).
-5. **"How did revenue change between two months?"** (e.g. April and May)  
-   *Answer*: Explains revenue increased by **₹77,800.00** (+32.3%) from April (₹240,700.00) to May (₹318,500.00).
-
----
-
-## 7. Render Cloud Deployment
-
-The repository is structured as a Render monorepo with `render.yaml`.
-
-### Cloud MySQL Database Setup
-Because your local laptop's MySQL is private, your deployed backend on Render must connect to a cloud-hosted MySQL database. Recommended free/compatible cloud MySQL providers:
-- **Aiven for MySQL**: Managed MySQL with SSL connection URI.
-- **TiDB Cloud**: Fully MySQL 8.0-compatible serverless database.
-- **PlanetScale**: MySQL-compatible cloud database.
-- **Railway**: Instant hosted MySQL instance.
-
-#### Cloud Database Migration:
-1. Create a database named `salesiq_db` on your cloud provider.
-2. Set `DATABASE_URL` in your Render backend service environment variables:
-   ```env
-   DATABASE_URL=mysql+pymysql://USER:PASSWORD@HOST:PORT/salesiq_db?ssl_ca=/etc/ssl/certs/ca-certificates.crt
-   ```
-3. Run the import script against your cloud database:
-   ```bash
-   DATABASE_URL="mysql+pymysql://..." python backend/init_db.py
-   ```
-
-### Deploying via Render Blueprint:
-1. Push your repository to GitHub.
-2. In the Render Dashboard, click **New > Blueprint**.
-3. Select your repository. Render will detect `render.yaml` and configure:
-   - **`salesiq-backend`** (Python Web Service running `uvicorn backend.main:app`)
-   - **`salesiq-frontend`** (Static Site publishing `frontend/dist`)
-4. Fill in the required environment variables:
-   - `DATABASE_URL` (your cloud MySQL connection string)
-   - `GROQ_API_KEY` (your Groq key)
-   - `FRONTEND_ORIGIN` (e.g. `https://salesiq-frontend.onrender.com`)
-   - `VITE_API_BASE_URL` (e.g. `https://salesiq-backend.onrender.com`)
-5. Click **Apply**.
-
----
-
-## 8. License & Attribution
-
-Built for the **SalesIQ AI Business Intelligence Assessment**.  
-All rights reserved.
+## License
+MIT License. Built with ❤️ for intelligent mathematical learning.
