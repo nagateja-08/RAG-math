@@ -1,23 +1,269 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/* ─── Design Tokens ─────────────────────────────────────────── */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  --bg-primary:   #090d16;
+  --bg-surface:   #0d1424;
+  --bg-card:      #121b30;
+  --bg-input:     #17233d;
+  --accent:       #3b82f6;
+  --accent-glow:  rgba(59, 130, 246, 0.35);
+  --accent2:      #8b5cf6;
+  --accent2-glow: rgba(139, 92, 246, 0.3);
+  --cyan:         #06b6d4;
+  --success:      #10b981;
+  --warning:      #f59e0b;
+  --danger:       #ef4444;
+  --text-primary: #f1f5f9;
+  --text-muted:   #94a3b8;
+  --border:       #1e293b;
+  --border-light: #334155;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
+/* ─── Calculus & Integration Watermark Background ─────────────── */
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  overflow-x: hidden;
+  position: relative;
+  /* SVG Mathematical Wallpaper of Calculus & Integrals */
+  background-image:
+    radial-gradient(ellipse 90% 60% at 15% 10%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 85% 85%, rgba(139, 92, 246, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(6, 182, 212, 0.04) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480' viewBox='0 0 480 480'%3E%3Cstyle%3E text %7B font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 14px; fill: %233b82f6; fill-opacity: 0.045; font-weight: 500; %7D .big %7B font-size: 32px; fill-opacity: 0.06; font-weight: 300; %7D .med %7B font-size: 20px; fill-opacity: 0.05; %7D %3C/style%3E%3C!-- Integrals & Calculus Equations --%3E%3Ctext x='30' y='60' class='big'%3E%E2%88%AB%3C/text%3E%3Ctext x='55' y='55'%3Ef(x)dx = F(x) + C%3C/text%3E%3Ctext x='260' y='45'%3Ed/dx[e%5Ex] = e%5Ex%3C/text%3E%3Ctext x='40' y='120'%3E%E2%88%AB%20x%E2%81%BF%20dx = %C2%B9%E2%81%84%E2%82%8B%E2%82%8A%E2%82%81%20x%E2%81%BF%E2%81%BA%C2%B9%3C/text%3E%3Ctext x='290' y='110' class='med'%3E%E2%88%AE%20F%C2%B7dr%3C/text%3E%3Ctext x='370' y='110'%3E= %E2%88%AC(%E2%88%87%C3%97F)%C2%B7dS%3C/text%3E%3Ctext x='40' y='180'%3Elim%20(sin x)/x = 1%3C/text%3E%3Ctext x='40' y='198' style='font-size:10px'%3Ex%E2%86%920%3C/text%3E%3Ctext x='260' y='175' class='big'%3E%E2%88%AC%3C/text%3E%3Ctext x='305' y='170'%3Ef(x,y)%20dA%3C/text%3E%3Ctext x='60' y='250' class='med'%3E%E2%88%87%C2%B2f = %E2%88%82%C2%B2f/%E2%88%82x%C2%B2 + %E2%88%82%C2%B2f/%E2%88%82y%C2%B2%3C/text%3E%3Ctext x='30' y='320'%3E%E2%88%AB%201/x%20dx = ln%7Cx%7C + C%3C/text%3E%3Ctext x='280' y='310'%3E%E2%88%AB%E2%82%80%E1%B5%8F%20e%E2%81%BB%CB%A3%C2%B2%20dx = %C2%BD%E2%88%9A%CF%80%3C/text%3E%3Ctext x='50' y='380' class='big'%3E%E2%88%91%3C/text%3E%3Ctext x='85' y='375'%3Ea%E1%B5%A3%E2%81%BF = a/(1-r)%3C/text%3E%3Ctext x='260' y='390'%3Ed/dx[uv] = u%27v + uv%27%3C/text%3E%3Ctext x='50' y='440'%3E%E2%88%AB%20u%20dv = uv - %E2%88%AB%20v%20du%3C/text%3E%3Ctext x='280' y='450'%3Ee%E2%81%B1%E1%B5%96 + 1 = 0%3C/text%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-surface); }
+::-webkit-scrollbar-thumb { background: #263352; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ─── Typography ─────────────────────────────────────────────── */
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* ─── Glass Panels ───────────────────────────────────────────── */
+.glass {
+  background: rgba(13, 20, 36, 0.82);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid var(--border);
+}
+
+.glass-bright {
+  background: rgba(18, 27, 48, 0.78);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* ─── Glow & Accents ─────────────────────────────────────────── */
+.glow-blue {
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.25), 0 0 50px rgba(59, 130, 246, 0.08);
+}
+.glow-purple {
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.25), 0 0 50px rgba(139, 92, 246, 0.08);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.5);
+  filter: brightness(1.1);
+}
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+.btn-ghost {
+  background: rgba(18, 27, 48, 0.5);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  color: var(--text-primary);
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* ─── Chat Bubbles ───────────────────────────────────────────── */
+.bubble-user {
+  background: linear-gradient(135deg, #1d4ed8, #4338ca);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 4px 20px rgba(29, 78, 216, 0.25);
+  color: #ffffff;
+}
+
+.bubble-assistant {
+  background: rgba(18, 27, 48, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: 4px 16px 16px 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ─── Tab Active ─────────────────────────────────────────────── */
+.tab-active {
+  background: linear-gradient(135deg, #2563eb, #6366f1) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);
+}
+
+/* ─── Chat Input ─────────────────────────────────────────────── */
+.chat-input {
+  background: rgba(23, 35, 61, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 14px;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(16px);
+}
+.chat-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 0 20px rgba(59, 130, 246, 0.15);
+}
+
+/* ─── Math Symbol Chips ──────────────────────────────────────── */
+.symbol-chip {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.symbol-chip:hover {
+  background: rgba(59, 130, 246, 0.22);
+  border-color: #60a5fa;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* ─── Animated Floating Math Symbols ─────────────────────────── */
+@keyframes floatUpMath {
+  0%   { opacity: 0; transform: translateY(0) rotate(0deg); }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-110vh) rotate(20deg); }
+}
+
+.math-float {
+  position: fixed;
+  font-family: 'JetBrains Mono', serif;
+  color: rgba(96, 165, 250, 0.09);
+  pointer-events: none;
+  z-index: 0;
+  animation: floatUpMath linear infinite;
+  user-select: none;
+}
+
+/* ─── Pulse Animation ────────────────────────────────────────── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%      { opacity: 1; transform: scale(1.15); }
+}
+.dot-pulse span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #60a5fa;
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+.dot-pulse span:nth-child(2) { animation-delay: 0.25s; }
+.dot-pulse span:nth-child(3) { animation-delay: 0.5s; }
+
+/* ─── Prose Math Markdown Styling ────────────────────────────── */
+.prose-math {
+  color: #e2e8f0;
+  line-height: 1.75;
+}
+.prose-math h1, .prose-math h2, .prose-math h3, .prose-math h4 {
+  color: #f8fafc;
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+}
+.prose-math h2 { font-size: 1.15rem; color: #93c5fd; }
+.prose-math h3 { font-size: 1.05rem; color: #c4b5fd; }
+.prose-math strong { color: #bfdbfe; font-weight: 600; }
+.prose-math code {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 0.84em;
+  color: #93c5fd;
+}
+.prose-math pre {
+  background: #080d1a;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+.prose-math ul, .prose-math ol {
+  padding-left: 1.4rem;
+  margin: 0.5rem 0;
+}
+.prose-math li { margin-bottom: 0.25rem; }
+
+/* ─── KaTeX Rendering Tweaks ─────────────────────────────────── */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.6rem 0.2rem;
+  margin: 0.75rem 0;
+}
+.katex {
+  color: #dbeafe !important;
+  font-size: 1.05em;
 }

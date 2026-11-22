@@ -8,11 +8,11 @@ logger = logging.getLogger("mathgpt.llm")
 settings = get_settings()
 
 FALLBACK_MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
-    "llama3-70b-8192",
-    "llama3-8b-8192",
-    "gemma2-9b-it"
+    "qwen/qwen3.8-27b",             # Primary — Best active math model on Groq
+    "openai/gpt-oss-120b",          # 120B model fallback
+    "openai/gpt-oss-20b",           # 20B fast fallback
+    "llama-3.3-70b-versatile",      # Meta LLaMA 3.3
+    "llama-3.1-8b-instant",         # LLaMA 3.1 instant
 ]
 
 def get_groq_client() -> Optional[Groq]:

@@ -11,7 +11,7 @@ services:
       - key: GROQ_API_KEY
         sync: false
       - key: MODEL_NAME
-        value: llama-3.3-70b-versatile
+        value: qwen/qwen3.8-27b
       - key: NEO4J_URI
         value: ""
       - key: NEO4J_USERNAME

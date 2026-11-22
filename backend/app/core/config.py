@@ -9,7 +9,7 @@ _ENV_FILE = _BACKEND_DIR / ".env"
 class Settings(BaseSettings):
     # LLM Settings
     groq_api_key: str = "your_groq_api_key_here"
-    model_name: str = "llama-3.3-70b-versatile"
+    model_name: str = "qwen/qwen3.8-27b"
     hf_api_key: str = ""
 
     # Neo4j Settings

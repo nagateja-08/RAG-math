@@ -3,10 +3,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { 
-  Send, Plus, Trash2, Database, Layers, Sparkles, 
-  Upload, HelpCircle, CheckCircle2, AlertTriangle, 
-  BarChart3, Calculator, BookOpen, ArrowRight, ExternalLink 
+import {
+  Send, Layers, Upload, CheckCircle2, AlertTriangle,
+  BarChart3, Calculator, BookOpen, ArrowRight, Database,
+  Network, Cpu, Atom, Infinity, FlaskConical, Sigma
 } from 'lucide-react';
 
 import { askQuestion, uploadFile, healthCheck } from '../services/api';
@@ -15,77 +15,93 @@ import ProgressDashboard from './ProgressDashboard';
 import FormulaVerifier from './FormulaVerifier';
 import AssessmentModal from './AssessmentModal';
 
+/* ─── Floating Math Symbols Component ───────────────────────── */
+const FLOAT_SYMBOLS = ['∫', '∑', '∂', '√', '∞', 'π', 'θ', 'Δ', '∇', 'λ', 'α', 'β', 'φ', 'Ω', '∮', '∏', 'dx', 'dy', '→', '≈'];
+
+function FloatingSymbols() {
+  const [symbols, setSymbols] = useState([]);
+  useEffect(() => {
+    const created = Array.from({ length: 18 }, (_, i) => ({
+      id: i,
+      symbol: FLOAT_SYMBOLS[Math.floor(Math.random() * FLOAT_SYMBOLS.length)],
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 20}s`,
+      duration: `${18 + Math.random() * 20}s`,
+      size: `${0.9 + Math.random() * 1.4}rem`,
+      opacity: 0.04 + Math.random() * 0.06,
+    }));
+    setSymbols(created);
+  }, []);
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden>
+      {symbols.map(s => (
+        <span key={s.id} className="math-float absolute font-mono select-none"
+          style={{ left: s.left, bottom: '-5%', animationDelay: s.delay, animationDuration: s.duration, fontSize: s.size, opacity: s.opacity }}>
+          {s.symbol}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Quick Symbols ─────────────────────────────────────────── */
 const QUICK_MATH_SYMBOLS = [
-  { label: '∫ dx', insert: '\\int f(x) \\, dx' },
-  { label: 'd/dx', insert: '\\frac{d}{dx}[f(x)]' },
-  { label: '√x', insert: '\\sqrt{x}' },
-  { label: 'lim', insert: '\\lim_{x \\to 0}' },
-  { label: 'x²', insert: 'x^2' },
-  { label: '∑', insert: '\\sum_{i=1}^{n}' },
-  { label: 'π', insert: '\\pi' },
-  { label: 'θ', insert: '\\theta' },
+  { label: '∫ dx',   insert: '\\int f(x) \\, dx' },
+  { label: 'd/dx',   insert: '\\frac{d}{dx}[f(x)]' },
+  { label: '√x',     insert: '\\sqrt{x}' },
+  { label: 'lim',    insert: '\\lim_{x \\to 0}' },
+  { label: 'x²',     insert: 'x^2' },
+  { label: '∑',      insert: '\\sum_{i=1}^{n}' },
+  { label: 'π',      insert: '\\pi' },
+  { label: 'θ',      insert: '\\theta' },
   { label: 'P(A|B)', insert: 'P(A|B) = \\frac{P(A \\cap B)}{P(B)}' },
 ];
 
+/* ─── Starter Suggestions ───────────────────────────────────── */
 const SUGGESTIONS = [
-  {
-    title: 'Explain Integration',
-    prompt: 'Explain Integration, its prerequisites, fundamental formulas, and a worked example with verification.',
-    tag: 'Calculus'
-  },
-  {
-    title: 'Differentiate & Verify',
-    prompt: 'Find the derivative of f(x) = x^3 - 4x + sin(x) and verify it mathematically with SymPy.',
-    tag: 'Derivatives'
-  },
-  {
-    title: 'Solve Quadratic Equation',
-    prompt: 'Solve the equation x^2 - 5x + 6 = 0 step-by-step and show roots.',
-    tag: 'Algebra'
-  },
-  {
-    title: 'Bayes Theorem Application',
-    prompt: 'Explain Bayes Theorem and its prerequisites in probability with a concrete example.',
-    tag: 'Probability'
-  }
+  { title: 'Explain Integration', prompt: 'Explain Integration, its prerequisites, fundamental formulas, and a worked example with verification.', tag: 'Calculus', icon: '∫' },
+  { title: 'Differentiate & Verify', prompt: 'Find the derivative of f(x) = x^3 - 4x + sin(x) and verify it mathematically.', tag: 'Derivatives', icon: 'd/dx' },
+  { title: 'Solve Quadratic', prompt: 'Solve the equation x^2 - 5x + 6 = 0 step-by-step and show roots.', tag: 'Algebra', icon: 'x²' },
+  { title: 'Bayes Theorem', prompt: 'Explain Bayes Theorem and its prerequisites in probability with a concrete example.', tag: 'Probability', icon: 'P(A|B)' },
 ];
 
+/* ─── NAV TABS ───────────────────────────────────────────────── */
+const TABS = [
+  { id: 'chat',     label: 'Math Chat',       icon: Atom },
+  { id: 'graph',    label: 'Graph Explorer',  icon: Network },
+  { id: 'progress', label: 'Learning',        icon: BarChart3 },
+  { id: 'verifier', label: 'SymPy Verifier',  icon: FlaskConical },
+];
+
+/* ─── Main Component ─────────────────────────────────────────── */
 export default function ChatUI() {
-  const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'graph', 'progress', 'verifier'
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: 
-        `# Welcome to MathGPT! 🧮\n\n` +
-        `I am your **Graph-Enhanced RAG Intelligent Mathematical Learning Platform**.\n\n` +
-        `### How I work:\n` +
-        `- **Knowledge Graph (Neo4j)**: Understands prerequisites, formulas, and conceptual dependencies.\n` +
-        `- **Vector Retrieval (FAISS)**: Retrieves grounded mathematical explanations from documents.\n` +
-        `- **Symbolic Math Engine (SymPy)**: Independently verifies formulas, derivatives, and calculations.\n\n` +
-        `Ask any math question below, upload your textbooks, or explore the interactive Knowledge Graph!`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    }
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab]   = useState('chat');
+  const [messages,  setMessages]    = useState([{
+    id: 'welcome', role: 'assistant',
+    content:
+      `# Welcome to MathGPT 🧮\n\n` +
+      `I am your **Graph-Enhanced RAG Intelligent Mathematical Learning Platform**.\n\n` +
+      `### How I work:\n` +
+      `- **Knowledge Graph (Neo4j)**: Understands prerequisites, formulas, and conceptual dependencies.\n` +
+      `- **Vector Retrieval (FAISS)**: Retrieves grounded mathematical explanations from documents.\n` +
+      `- **Symbolic Math Engine (SymPy)**: Independently verifies formulas, derivatives, and calculations.\n\n` +
+      `Ask any math question below, upload your textbooks, or explore the interactive Knowledge Graph!`,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  }]);
+  const [input,        setInput]        = useState('');
+  const [loading,      setLoading]      = useState(false);
   const [systemHealth, setSystemHealth] = useState(null);
-
-  // File Upload State
-  const [uploading, setUploading] = useState(false);
-  const [uploadMessage, setUploadMessage] = useState(null);
-  const fileInputRef = useRef(null);
-
-  // Assessment Modal State
-  const [quizConcept, setQuizConcept] = useState(null);
-  const [isQuizOpen, setIsQuizOpen] = useState(false);
-
+  const [uploading,    setUploading]    = useState(false);
+  const [uploadMsg,    setUploadMsg]    = useState(null);
+  const [quizConcept,  setQuizConcept]  = useState(null);
+  const [isQuizOpen,   setIsQuizOpen]   = useState(false);
+  const fileInputRef   = useRef(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     checkHealth();
-    const interval = setInterval(checkHealth, 20000);
-    return () => clearInterval(interval);
+    const t = setInterval(checkHealth, 20000);
+    return () => clearInterval(t);
   }, []);
 
   useEffect(() => {
@@ -93,308 +109,228 @@ export default function ChatUI() {
   }, [messages, loading]);
 
   const checkHealth = async () => {
-    try {
-      const data = await healthCheck();
-      setSystemHealth(data);
-    } catch (err) {
-      setSystemHealth({ status: 'offline', neo4j_mode: 'offline', total_graph_nodes: 0 });
-    }
+    try { setSystemHealth(await healthCheck()); }
+    catch { setSystemHealth({ status: 'offline', neo4j_mode: 'offline', total_graph_nodes: 0 }); }
   };
 
   const handleSend = async (textToSend = input) => {
-    const questionText = textToSend.trim();
-    if (!questionText || loading) return;
-
-    const userMsg = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: questionText,
+    const q = textToSend.trim();
+    if (!q || loading) return;
+    setMessages(p => [...p, {
+      id: `user-${Date.now()}`, role: 'user', content: q,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+    }]);
     setInput('');
     setLoading(true);
-
     try {
-      // Build conversation history format
-      const history = messages.slice(-6).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-      const response = await askQuestion(questionText, history);
-
-      const botMsg = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: response.answer,
-        identified_concept: response.identified_concept,
-        prerequisites: response.prerequisites,
-        document_references: response.document_references,
-        graph_context: response.graph_context,
-        sympy_verification: response.sympy_verification,
-        recommended_study_topics: response.recommended_study_topics,
+      const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
+      const res = await askQuestion(q, history);
+      setMessages(p => [...p, {
+        id: `assistant-${Date.now()}`, role: 'assistant',
+        content: res.answer,
+        identified_concept: res.identified_concept,
+        prerequisites: res.prerequisites,
+        document_references: res.document_references,
+        graph_context: res.graph_context,
+        sympy_verification: res.sympy_verification,
+        recommended_study_topics: res.recommended_study_topics,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages((prev) => [...prev, botMsg]);
+      }]);
     } catch (err) {
-      console.error('Ask error:', err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          role: 'assistant',
-          content: '⚠️ Unable to complete request. Please verify backend connection.',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
+      setMessages(p => [...p, {
+        id: `err-${Date.now()}`, role: 'assistant',
+        content: '⚠️ Unable to complete request. Please verify backend connection.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
+    } finally { setLoading(false); }
   };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setUploading(true);
-    setUploadMessage(null);
+    setUploading(true); setUploadMsg(null);
     try {
       const res = await uploadFile(file);
-      setUploadMessage({
-        type: 'success',
-        text: `Indexed ${res.chunks_added} chunks into FAISS and synced ${res.concepts_extracted.length} concepts to Neo4j.`,
-      });
+      setUploadMsg({ type: 'success', text: `✓ Indexed ${res.chunks_added} chunks → FAISS. Synced ${res.concepts_extracted?.length ?? 0} concepts → Neo4j.` });
       checkHealth();
-    } catch (err) {
-      setUploadMessage({
-        type: 'error',
-        text: 'Document upload failed. Ensure file is a valid .pdf or .txt file.',
-      });
+    } catch {
+      setUploadMsg({ type: 'error', text: '✗ Upload failed. Ensure file is a valid .pdf or .txt.' });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const insertSymbol = (symbol) => {
-    setInput((prev) => prev + (prev.length > 0 && !prev.endsWith(' ') ? ' ' : '') + symbol);
-  };
-
-  const startQuiz = (conceptName) => {
-    setQuizConcept(conceptName);
-    setIsQuizOpen(true);
-  };
+  const insertSymbol = sym => setInput(p => p + (p && !p.endsWith(' ') ? ' ' : '') + sym);
 
   return (
-    <div className="flex h-screen w-full bg-slate-950 text-slate-100 font-sans overflow-hidden">
-      {/* Assessment Modal */}
-      <AssessmentModal
-        concept={quizConcept}
-        isOpen={isQuizOpen}
-        onClose={() => setIsQuizOpen(false)}
-        onComplete={() => checkHealth()}
-      />
+    <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: 'var(--bg-primary)', position: 'relative', flexDirection: 'column' }}>
+      <FloatingSymbols />
+      <AssessmentModal concept={quizConcept} isOpen={isQuizOpen}
+        onClose={() => setIsQuizOpen(false)} onComplete={checkHealth} />
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top Navbar */}
-        <header className="h-16 bg-slate-900/90 border-b border-slate-800 px-6 flex items-center justify-between backdrop-blur-md z-20">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-600/30">
-              <span className="text-xl">🧮</span>
+      {/* ── HEADER ─────────────────────────────────────────────── */}
+      <header className="glass" style={{
+        position: 'relative', zIndex: 10, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 1.5rem', height: '64px', borderBottom: '1px solid var(--border)',
+        borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+            background: 'linear-gradient(135deg, #4f8ef7 0%, #7c3aed 50%, #22d3ee 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 20px #4f8ef755, 0 4px 12px #00000055',
+            fontSize: '1.3rem',
+          }}>Σ</div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="gradient-text" style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.3px' }}>MathGPT</span>
+              <span style={{
+                fontSize: '0.65rem', background: 'rgba(79,142,247,0.12)', color: '#7cb4ff',
+                border: '1px solid rgba(79,142,247,0.3)', borderRadius: 20, padding: '1px 8px', fontWeight: 700, letterSpacing: '0.3px'
+              }}>Graph-Enhanced RAG v2.0</span>
             </div>
-            <div>
-              <h1 className="text-base font-bold text-white flex items-center gap-2">
-                MathGPT
-                <span className="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">
-                  Graph-Enhanced RAG v2.0
-                </span>
-              </h1>
-              <p className="text-[11px] text-slate-400">
-                FAISS Vector Search &bull; Neo4j Knowledge Graph &bull; SymPy Symbolic Engine
-              </p>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 1 }}>
+              FAISS Vector Search • Neo4j Knowledge Graph • SymPy Symbolic Engine
             </div>
           </div>
+        </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                activeTab === 'chat'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              💬 Math Chat
-            </button>
-            <button
-              onClick={() => setActiveTab('graph')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                activeTab === 'graph'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" /> Graph Explorer
-            </button>
-            <button
-              onClick={() => setActiveTab('progress')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                activeTab === 'progress'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" /> Learning Progress
-            </button>
-            <button
-              onClick={() => setActiveTab('verifier')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                activeTab === 'verifier'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Calculator className="w-3.5 h-3.5" /> SymPy Verifier
-            </button>
-          </div>
+        {/* Tab Navigation */}
+        <nav style={{ display: 'flex', gap: '0.25rem', background: 'rgba(10,14,26,0.6)', borderRadius: 12, padding: '4px', border: '1px solid var(--border)' }}>
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={isActive ? 'tab-active' : 'btn-ghost'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '0.4rem 0.9rem', borderRadius: 9, fontSize: '0.78rem',
+                  fontWeight: 600, cursor: 'pointer', border: 'none',
+                  transition: 'all 0.2s ease',
+                  background: isActive ? undefined : 'transparent',
+                  color: isActive ? '#fff' : 'var(--text-muted)',
+                }}>
+                <Icon size={13} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
 
-          {/* Health & Upload Pill */}
-          <div className="flex items-center gap-3">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept=".pdf,.txt,.md"
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium border border-slate-700 transition"
-            >
-              <Upload className="w-3.5 h-3.5 text-indigo-400" />
-              <span>{uploading ? 'Indexing...' : 'Upload PDF/TXT'}</span>
-            </button>
+        {/* Right: Upload + Health */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf,.txt,.md" className="hidden" />
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+            className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', padding: '0.4rem 0.9rem' }}>
+            <Upload size={13} style={{ color: 'var(--accent)' }} />
+            {uploading ? 'Indexing…' : 'Upload PDF/TXT'}
+          </button>
 
-            {systemHealth && (
-              <div className="flex items-center gap-2 text-[11px] text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    systemHealth.status === 'healthy' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'
-                  }`}
-                />
-                <span>Graph: {systemHealth.neo4j_mode === 'live_neo4j' ? 'Live Neo4j' : 'Active (60 nodes)'}</span>
-              </div>
-            )}
-          </div>
-        </header>
+          {systemHealth && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              fontSize: '0.72rem', color: 'var(--text-muted)',
+              background: 'rgba(10,14,26,0.6)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '4px 10px',
+            }}>
+              <span style={{
+                width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                background: systemHealth.status === 'healthy' ? 'var(--success)' : 'var(--danger)',
+                boxShadow: systemHealth.status === 'healthy' ? '0 0 6px var(--success)' : 'none',
+                animation: systemHealth.status === 'healthy' ? 'dot-pulse 2s infinite' : 'none',
+              }} />
+              <span>Graph: {systemHealth.neo4j_mode === 'live_neo4j' ? 'Live Neo4j' : `Active (${systemHealth.total_graph_nodes ?? 60} nodes)`}</span>
+            </div>
+          )}
+        </div>
+      </header>
 
-        {/* Upload Status Banner */}
-        {uploadMessage && (
-          <div
-            className={`px-6 py-2 text-xs flex items-center justify-between border-b ${
-              uploadMessage.type === 'success'
-                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-200'
-                : 'bg-rose-950/40 border-rose-500/30 text-rose-200'
-            }`}
-          >
-            <span>{uploadMessage.text}</span>
-            <button onClick={() => setUploadMessage(null)} className="text-slate-400 hover:text-white">
-              ✕
-            </button>
-          </div>
-        )}
+      {/* Upload Banner */}
+      {uploadMsg && (
+        <div style={{
+          flexShrink: 0, padding: '0.5rem 1.5rem', fontSize: '0.75rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: uploadMsg.type === 'success' ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+          borderBottom: `1px solid ${uploadMsg.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+          color: uploadMsg.type === 'success' ? '#4ade80' : '#f87171',
+          position: 'relative', zIndex: 9,
+        }}>
+          <span>{uploadMsg.text}</span>
+          <button onClick={() => setUploadMsg(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+      )}
 
-        {/* Tab View Switcher */}
+      {/* ── CONTENT AREA ───────────────────────────────────────── */}
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column' }}>
         {activeTab === 'graph' ? (
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem' }}>
             <GraphExplorer
-              onSelectConceptForChat={(concept) => {
-                setActiveTab('chat');
-                handleSend(`Explain ${concept}, its mathematical prerequisites, formal definitions, and a step-by-step example.`);
-              }}
-              onStartQuiz={(concept) => startQuiz(concept)}
+              onSelectConceptForChat={concept => { setActiveTab('chat'); handleSend(`Explain ${concept}, its mathematical prerequisites, formal definitions, and a step-by-step example.`); }}
+              onStartQuiz={concept => { setQuizConcept(concept); setIsQuizOpen(true); }}
             />
           </div>
         ) : activeTab === 'progress' ? (
-          <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full">
+          <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem', maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <ProgressDashboard
-              onSelectTopic={(topic) => {
-                setActiveTab('chat');
-                handleSend(`Explain ${topic} in detail with step-by-step mathematical examples.`);
-              }}
-              onStartQuiz={(topic) => startQuiz(topic)}
+              onSelectTopic={topic => { setActiveTab('chat'); handleSend(`Explain ${topic} in detail with step-by-step mathematical examples.`); }}
+              onStartQuiz={topic => { setQuizConcept(topic); setIsQuizOpen(true); }}
             />
           </div>
         ) : activeTab === 'verifier' ? (
-          <div className="flex-1 p-6 overflow-y-auto max-w-4xl mx-auto w-full">
+          <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem', maxWidth: 900, margin: '0 auto', width: '100%' }}>
             <FormulaVerifier />
           </div>
         ) : (
-          /* Main Math Chat View */
-          <div className="flex-1 flex flex-col h-full overflow-hidden">
-            {/* Messages Scroll Area */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-4xl mx-auto w-full">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
-                >
-                  <div
-                    className={`max-w-[88%] md:max-w-[80%] rounded-2xl p-5 shadow-md ${
-                      msg.role === 'user'
-                        ? 'bg-indigo-600 text-white rounded-br-none'
-                        : 'bg-slate-900 border border-slate-800 text-slate-100 rounded-bl-none space-y-4'
-                    }`}
-                  >
-                    {/* Message Header */}
-                    <div className="flex items-center justify-between text-[11px] opacity-75 mb-1 pb-1 border-b border-white/10">
-                      <span className="font-semibold uppercase tracking-wider">
-                        {msg.role === 'user' ? 'You' : 'MathGPT Mentor'}
-                      </span>
-                      <span>{msg.timestamp}</span>
-                    </div>
+          /* ── CHAT PANEL ─────────────────────────────────────── */
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: 860, margin: '0 auto', width: '100%' }}>
+              {messages.map(msg => (
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                  {/* Role Label */}
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    {msg.role === 'user' ? (
+                      <><Cpu size={10} /> You</>
+                    ) : (
+                      <><Sigma size={10} style={{ color: 'var(--accent)' }} /> MathGPT Mentor</>
+                    )}
+                    <span style={{ fontWeight: 400, opacity: 0.6 }}>{msg.timestamp}</span>
+                  </div>
 
-                    {/* Markdown Answer Body with KaTeX */}
-                    <div className="prose prose-invert max-w-none text-sm leading-relaxed overflow-x-auto">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                      >
+                  {/* Bubble */}
+                  <div className={msg.role === 'user' ? 'bubble-user' : 'bubble-assistant'}
+                    style={{ maxWidth: '88%', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div className="prose-math" style={{ fontSize: '0.875rem' }}>
+                      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
                         {msg.content}
                       </ReactMarkdown>
                     </div>
 
-                    {/* Graph Prerequisite Alert Banner */}
-                    {msg.role === 'assistant' && msg.prerequisites && msg.prerequisites.length > 0 && (
-                      <div className="mt-3 p-3 bg-blue-950/40 border border-blue-500/30 rounded-xl text-xs space-y-2">
-                        <div className="font-semibold text-blue-300 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5">
-                            <BookOpen className="w-4 h-4 text-blue-400" />
-                            Prerequisites for {msg.identified_concept || 'this topic'} (from Knowledge Graph):
+                    {/* Prerequisites Panel */}
+                    {msg.role === 'assistant' && msg.prerequisites?.length > 0 && (
+                      <div style={{
+                        background: 'rgba(79,142,247,0.07)', border: '1px solid rgba(79,142,247,0.2)',
+                        borderRadius: 10, padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#7cb4ff' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <BookOpen size={13} /> Prerequisites for {msg.identified_concept || 'this topic'} · Knowledge Graph
                           </span>
                           {msg.identified_concept && (
-                            <button
-                              onClick={() => startQuiz(msg.identified_concept)}
-                              className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1"
-                            >
-                              <span>Test My Readiness</span>
-                              <ArrowRight className="w-3 h-3" />
+                            <button onClick={() => { setQuizConcept(msg.identified_concept); setIsQuizOpen(true); }}
+                              style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, padding: '3px 10px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              Test My Readiness <ArrowRight size={10} />
                             </button>
                           )}
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                           {msg.prerequisites.map((p, i) => (
-                            <span
-                              key={i}
-                              onClick={() => startQuiz(p.name)}
-                              className="bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2 py-0.5 rounded-md cursor-pointer hover:bg-blue-500/20"
-                            >
+                            <span key={i} className="symbol-chip" onClick={() => { setQuizConcept(p.name); setIsQuizOpen(true); }} style={{ cursor: 'pointer' }}>
                               {p.name}
                             </span>
                           ))}
@@ -402,120 +338,127 @@ export default function ChatUI() {
                       </div>
                     )}
 
-                    {/* SymPy Verification Status Badge */}
+                    {/* SymPy Verification Badge */}
                     {msg.role === 'assistant' && msg.sympy_verification && msg.sympy_verification.status !== 'not_applicable' && (
-                      <div
-                        className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
-                          msg.sympy_verification.is_verified
-                            ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'
-                            : 'bg-amber-950/30 border-amber-500/30 text-amber-300'
-                        }`}
-                      >
-                        {msg.sympy_verification.is_verified ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                        ) : (
-                          <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                        )}
+                      <div style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.75rem',
+                        padding: '0.6rem 0.75rem', borderRadius: 10,
+                        background: msg.sympy_verification.is_verified ? 'rgba(34,197,94,0.07)' : 'rgba(245,158,11,0.07)',
+                        border: `1px solid ${msg.sympy_verification.is_verified ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                        color: msg.sympy_verification.is_verified ? '#4ade80' : '#fbbf24',
+                      }}>
+                        {msg.sympy_verification.is_verified
+                          ? <CheckCircle2 size={14} style={{ marginTop: 1, flexShrink: 0 }} />
+                          : <AlertTriangle size={14} style={{ marginTop: 1, flexShrink: 0 }} />}
                         <div>
-                          <div className="font-bold">
-                            {msg.sympy_verification.is_verified
-                              ? 'SymPy Independently Verified: Mathematically Valid'
-                              : 'SymPy Verification Notice: Could not be automatically verified'}
+                          <div style={{ fontWeight: 700 }}>
+                            {msg.sympy_verification.is_verified ? '✓ SymPy Independently Verified — Mathematically Valid' : 'SymPy: Could not be automatically verified'}
                           </div>
                           {msg.sympy_verification.latex_output && (
-                            <div className="text-slate-200 mt-1 font-mono">
-                              Verified Step: {msg.sympy_verification.latex_output}
+                            <div style={{ color: 'var(--text-muted)', marginTop: 2, fontFamily: 'JetBrains Mono, monospace' }}>
+                              {msg.sympy_verification.latex_output}
                             </div>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {/* Document Reference Citations */}
-                    {msg.role === 'assistant' && msg.document_references && msg.document_references.length > 0 && (
-                      <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center gap-2">
-                        <Database className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>Sources: {msg.document_references.join(', ')}</span>
+                    {/* Document Source Citations */}
+                    {msg.role === 'assistant' && msg.document_references?.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
+                        <Database size={11} style={{ color: 'var(--accent)' }} /> Sources: {msg.document_references.join(', ')}
                       </div>
                     )}
                   </div>
                 </div>
               ))}
 
+              {/* Thinking Indicator */}
               {loading && (
-                <div className="flex items-start gap-3">
-                  <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl rounded-bl-none text-xs text-slate-400 flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-500" />
-                    <span>Traversing Knowledge Graph & calculating symbolic verification...</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <div className="bubble-assistant" style={{ padding: '0.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    <div className="dot-pulse" style={{ display: 'flex', gap: 5 }}>
+                      <span /><span /><span />
+                    </div>
+                    <span>Traversing Knowledge Graph &amp; verifying with SymPy…</span>
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Suggestions (if conversation is short) */}
-            {messages.length <= 2 && (
-              <div className="px-6 py-2 max-w-4xl mx-auto w-full grid grid-cols-2 md:grid-cols-4 gap-2">
+            {/* Starter Suggestions */}
+            {messages.length <= 1 && (
+              <div style={{ padding: '0 1.5rem 0.75rem', maxWidth: 860, margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
                 {SUGGESTIONS.map((s, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSend(s.prompt)}
-                    className="p-2.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 rounded-xl text-left transition group"
-                  >
-                    <span className="text-[10px] uppercase font-bold text-indigo-400 block mb-1">
-                      {s.tag}
-                    </span>
-                    <span className="text-xs text-slate-200 group-hover:text-white font-medium line-clamp-1">
-                      {s.title}
-                    </span>
+                  <button key={idx} onClick={() => handleSend(s.prompt)}
+                    className="glass-bright"
+                    style={{
+                      padding: '0.75rem', borderRadius: 12, textAlign: 'left', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', gap: '0.3rem', border: '1px solid var(--border)',
+                      transition: 'all 0.2s ease', background: 'rgba(19,29,53,0.6)',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(79,142,247,0.08)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'rgba(19,29,53,0.6)'; }}>
+                    <span style={{ fontSize: '1.1rem', marginBottom: '0.1rem' }}>{s.icon}</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.tag}</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.3 }}>{s.title}</span>
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Quick Math Symbols Bar */}
-            <div className="px-6 py-1.5 max-w-4xl mx-auto w-full flex items-center gap-1.5 overflow-x-auto">
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mr-1">Insert:</span>
+            {/* Symbol Insert Bar */}
+            <div style={{
+              padding: '0.5rem 1.5rem', maxWidth: 860, margin: '0 auto', width: '100%',
+              display: 'flex', alignItems: 'center', gap: '0.4rem', overflowX: 'auto',
+              borderTop: '1px solid rgba(30,45,80,0.5)',
+            }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>Insert:</span>
               {QUICK_MATH_SYMBOLS.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => insertSymbol(s.insert)}
-                  className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-md text-xs font-mono border border-slate-800 transition shrink-0"
-                >
-                  {s.label}
-                </button>
+                <button key={i} className="symbol-chip" onClick={() => insertSymbol(s.insert)}>{s.label}</button>
               ))}
             </div>
 
-            {/* Input Form Bar */}
-            <div className="p-4 bg-slate-900/80 border-t border-slate-800 backdrop-blur-md">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSend();
-                }}
-                className="max-w-4xl mx-auto flex items-center gap-2"
-              >
-                <input
-                  type="text"
+            {/* Input Area */}
+            <div style={{
+              padding: '0.75rem 1.5rem 1.25rem', maxWidth: 860, margin: '0 auto', width: '100%',
+              display: 'flex', gap: '0.75rem', alignItems: 'flex-end',
+            }}>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <textarea
+                  className="chat-input"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask a mathematical question (e.g. 'Explain Integration and its prerequisites', or 'differentiate x^3 - 4x')..."
-                  className="flex-1 p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
-                  disabled={loading}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  placeholder="Ask a mathematical question (e.g. 'Explain Integration and its prerequisites')…"
+                  rows={1}
+                  style={{
+                    width: '100%', padding: '0.85rem 1rem', fontSize: '0.875rem',
+                    minHeight: 48, maxHeight: 180,
+                    boxSizing: 'border-box', display: 'block',
+                  }}
+                  onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px'; }}
                 />
-                <button
-                  type="submit"
-                  disabled={loading || !input.trim()}
-                  className="p-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl transition shadow-lg shadow-indigo-600/30"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </form>
+              </div>
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim() || loading}
+                className="btn-primary"
+                style={{ height: 48, width: 48, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, flexShrink: 0, opacity: (!input.trim() || loading) ? 0.5 : 1, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer' }}>
+                <Send size={18} />
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* ── DECORATIVE GRID ─────────────────────────────────────── */}
+      <div aria-hidden style={{
+        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+        backgroundImage: `linear-gradient(rgba(79,142,247,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(79,142,247,0.025) 1px, transparent 1px)`,
+        backgroundSize: '50px 50px',
+      }} />
     </div>
   );
 }
