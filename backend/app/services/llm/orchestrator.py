@@ -32,48 +32,96 @@ logger = logging.getLogger("mathgpt.orchestrator")
 settings = get_settings()
 
 MATH_SYSTEM_PROMPT = """
-You are MathGPT — an expert, ultra-concise AI mathematics solver.
+You are MathGPT — an expert AI mathematics problem solver.
 
-PRIMARY DIRECTIVE:
-Solve the math problem directly, cleanly, and with minimal words. Avoid lengthy paragraphs, repetitive derivations, or narrative filler.
+STRICT DOMAIN BOUNDARY:
+You answer ONLY questions about Mathematics, Calculus, Algebra, Geometry, Trigonometry, Probability, Statistics, and Quantitative Problem Solving.
+If the user asks ANY non-mathematical question (e.g. politics, politicians such as "cm of telangana", current affairs, trivia, geography, movies, celebrities, weather, general chatting):
+You MUST REFUSE immediately. Reply ONLY with:
+"I am **MathGPT**, an AI specialized exclusively in mathematics, calculus, algebra, geometry, probability, and statistics. 
 
-RULES FOR STEP-BY-STEP EXPLANATIONS:
-1. Keep each step SHORT: maximum 1 to 2 concise sentences per step.
-2. Put every key formula or equation on its OWN separate display line using double dollar signs:
-   $$ [Formula] $$
-   Do NOT cram multiple equations into one long inline sentence.
-3. Avoid tedious arithmetic steps like sqrt(2^2+6^2) = sqrt(4+36) = sqrt(40). Jump directly to the simplified equation.
-4. ALWAYS leave a clean blank line between steps for visual readability.
-5. Limit the solution to 3 to 5 concise steps maximum.
+Please ask a mathematics problem or upload an image of a math question to solve!"
 
-OUTPUT FORMAT FOR MATH PROBLEMS:
-### Solution
+EXACT OUTPUT FORMAT FOR MATH PROBLEMS (Short, sweet, and direct — like an official exam answer key):
 
-**Step 1: [Short Title]**
-[1-2 brief sentences explaining the step]
+### Answer
+Correct answer is **[value or simplified result]**
 
-$$ [Equation] $$
-
-**Step 2: [Short Title]**
-[1-2 brief sentences explaining the step]
-
-$$ [Equation] $$
-
-(Continue concisely until solved)
-
-### Final Answer
-$$ \\boxed{\\text{Result}} $$
-[One short, clear summary sentence stating the final answer]
+### Explanation
+[Direct, short, and sweet mathematical derivation. No unnecessary theory or narrative filler.]
+Connect equations naturally and concisely:
+- State the starting identity or relationship:
+  $$ [display equation] $$
+- State the property, theorem, or substitution applied:
+  $$ [display equation] $$
+- Simplify directly:
+  $$ [display equation] $$
+- Conclude: Hence, the answer is [value].
 
 STRICT PROHIBITIONS:
-- NEVER write giant, dense paragraphs combining multiple steps.
-- NEVER use square brackets `\\[ ... \\]` or `\\( ... \\)`. Use ONLY `$$ ... $$` for display and `$ ... $` for inline.
-- NEVER include theoretical sections like "1. Concept Introduction", "2. Prerequisite Concepts", "3. Relevant Formulas", "5. Worked Example", or "7. Related Concepts".
-- Keep explanations tight, mathematically rigorous, clean, and directly answering the question.
+- ZERO extra content: NO introductory paragraphs, NO textbook theory, NO prerequisite lists, NO fake historical contexts.
+- DO NOT use verbose step labels like "Step 1: Identify the role of...", "Step 2: ...".
+- DO NOT include sections like "Concept Introduction", "Prerequisite Concepts", "Relevant Formulas", "Worked Example", or "Related Concepts".
+- ALWAYS wrap display equations in $$...$$ on their own lines. Use $...$ for inline variables. NEVER use \\[ \\] or \\( \\).
+- Keep the entire explanation short, sweet, clean, and mathematically rigorous.
 """
 
+def check_math_relevance(query: str) -> Optional[str]:
+    """
+    Ensure the user query is relevant to mathematics, calculus, algebra, geometry,
+    probability, statistics, or quantitative problem solving.
+    Returns a strict refusal message if the query is non-mathematical.
+    """
+    if not query:
+        return None
+
+    q_lower = query.lower().strip()
+
+    # Greetings & assistant identity inquiries
+    if q_lower in ("hi", "hello", "hey", "good morning", "good evening", "who are you", "what can you do", "help"):
+        return (
+            "Hello! I am **MathGPT**, your AI mathematics solver.\n\n"
+            "Ask me any problem in **Calculus, Algebra, Trigonometry, Geometry, Probability, or Statistics**, or upload an image of a math problem to solve!"
+        )
+
+    # Obvious non-math entities, politics, geography, celebrities, trivia
+    non_math_patterns = [
+        r'\b(?:cm|chief minister|prime minister|president|governor|mla|mp|minister|politician|politics|bjp|congress|brs|party|election|vote|parliament)\b',
+        r'\b(?:capital of|currency of|population of|president of|prime minister of|ruler of|king of)\b',
+        r'\b(?:who is|who was|who are|tell me about)\s+(?:the\s+)?(?:cm|pm|president|minister|actor|actress|singer|player|celebrity|ceo|founder|director|author)\b',
+        r'\b(?:telangana|hyderabad|delhi|india|usa|america|russia|ukraine|china|pakistan)\b',
+        r'\b(?:movie|film|cinema|actor|actress|bollywood|hollywood|tollywood|song|lyrics|cricket|football|ipl|fifa|world cup)\b',
+        r'\b(?:recipe|cook|food|restaurant|dish|ingredients)\b',
+        r'\b(?:weather|temperature|forecast|rain in|climate in)\b'
+    ]
+
+    # Mathematical symbols and keywords
+    math_symbols = ["+", "-", "*", "/", "=", "^", "<", ">", "∫", "∑", "√", "lim", "∂", "π", "θ", "\\"]
+    math_keywords = [
+        "math", "solve", "calculate", "evaluate", "simplify", "derive", "integrate", "differentiate",
+        "integral", "derivative", "equation", "formula", "theorem", "matrix", "vector", "polynomial",
+        "quadratic", "linear", "logarithm", "exponential", "function", "limit", "series", "binomial",
+        "trigonometry", "sin", "cos", "tan", "probability", "statistics", "variance", "deviation",
+        "geometry", "circle", "ellipse", "parabola", "hyperbola", "triangle", "angle", "roots",
+        "roots of", "value of", "find x", "find y", "equal to", "fraction", "ratio", "percentage",
+        "graph", "slope", "tangent", "secant", "locus", "radius", "diameter", "modulus", "complex"
+    ]
+
+    has_math_symbols = any(sym in query for sym in math_symbols)
+    has_math_keywords = any(kw in q_lower for kw in math_keywords)
+
+    for pat in non_math_patterns:
+        if re.search(pat, q_lower):
+            if not has_math_symbols and not has_math_keywords:
+                return (
+                    "I am **MathGPT**, an AI specialized exclusively in mathematics, calculus, algebra, geometry, probability, and statistics.\n\n"
+                    "I cannot answer questions unrelated to mathematics. Please ask a mathematical problem or upload an image of a math question to solve!"
+                )
+
+    return None
+
 def normalize_math_delimiters(text: str) -> str:
-    """Ensure LaTeX delimiters render properly in KaTeX without raw brackets, and ensure spacing between steps."""
+    """Ensure LaTeX delimiters render properly in KaTeX without raw brackets, and ensure spacing."""
     if not text:
         return ""
     # Convert \[ ... \] to $$ ... $$ with spacing
@@ -86,8 +134,6 @@ def normalize_math_delimiters(text: str) -> str:
         r'\n\n$$\n\1\n$$\n\n',
         text
     )
-    # Ensure double newlines before Step headers so each step renders as a distinct, spaced block
-    text = re.sub(r'([^\n])\n+(Step\s*\d+:|\*\*Step\s*\d+:)/gi', r'\1\n\n\2', text)
     return text
 
 def extract_primary_concept(query: str) -> Optional[str]:
@@ -151,6 +197,23 @@ def execute_combined_pipeline(request: AskRequest, db: Optional[Session] = None)
                 user_q = "Please solve the mathematical problem provided in the uploaded image."
 
     logger.info(f"Processing question: {user_q}")
+
+    # Guardrail: Check for non-mathematical queries (politics, celebrities, CM/PM, general trivia)
+    refusal_msg = check_math_relevance(user_q)
+    if refusal_msg:
+        logger.info(f"Query rejected by math relevance filter: {user_q}")
+        return AskResponse(
+            answer=refusal_msg,
+            identified_concept=None,
+            subject="Mathematics",
+            prerequisites=[],
+            document_references=[],
+            graph_context=None,
+            sympy_verification=None,
+            recommended_study_topics=[],
+            extracted_question=extracted_question,
+            model_used=settings.model_name
+        )
 
     # 1. Query Understanding & Concept Identification
     primary_concept = extract_primary_concept(user_q)
