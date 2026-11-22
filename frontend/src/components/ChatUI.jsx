@@ -450,31 +450,6 @@ export default function ChatUI() {
                       </div>
                     )}
 
-                    {/* SymPy Verification Badge */}
-                    {msg.role === 'assistant' && msg.sympy_verification && msg.sympy_verification.status !== 'not_applicable' && (
-                      <div style={{
-                        display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.75rem',
-                        padding: '0.6rem 0.75rem', borderRadius: 10,
-                        background: msg.sympy_verification.is_verified ? 'rgba(34,197,94,0.07)' : 'rgba(245,158,11,0.07)',
-                        border: `1px solid ${msg.sympy_verification.is_verified ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`,
-                        color: msg.sympy_verification.is_verified ? '#4ade80' : '#fbbf24',
-                      }}>
-                        {msg.sympy_verification.is_verified
-                          ? <CheckCircle2 size={14} style={{ marginTop: 1, flexShrink: 0 }} />
-                          : <AlertTriangle size={14} style={{ marginTop: 1, flexShrink: 0 }} />}
-                        <div>
-                          <div style={{ fontWeight: 700 }}>
-                            {msg.sympy_verification.is_verified ? '✓ SymPy Independently Verified — Mathematically Valid' : 'SymPy: Could not be automatically verified'}
-                          </div>
-                          {msg.sympy_verification.latex_output && (
-                            <div style={{ color: 'var(--text-muted)', marginTop: 2, fontFamily: 'JetBrains Mono, monospace' }}>
-                              {msg.sympy_verification.latex_output}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
                     {/* Document Source Citations */}
                     {msg.role === 'assistant' && msg.document_references?.length > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
