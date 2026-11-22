@@ -10,14 +10,15 @@ const client = axios.create({
 });
 
 // 1. Core Combined Graph-Enhanced RAG Ask Endpoint
-export const askQuestion = async (question, history = [], userId = 'default_student') => {
+export const askQuestion = async (question, history = [], userId = 'default_student', imageData = null) => {
   const response = await client.post('/ask', {
-    question,
+    question: question || '',
     history,
     user_id: userId,
     use_vector_search: true,
     use_graph_retrieval: true,
     use_sympy_verification: true,
+    image_data: imageData || null,
   });
   return response.data;
 };

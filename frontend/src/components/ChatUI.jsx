@@ -6,7 +6,7 @@ import 'katex/dist/katex.min.css';
 import {
   Send, Layers, Upload, CheckCircle2, AlertTriangle,
   BarChart3, Calculator, BookOpen, ArrowRight, Database,
-  Network, Cpu, Atom, Infinity, Sigma
+  Network, Cpu, Atom, Infinity, Sigma, Camera, X, Image as ImageIcon
 } from 'lucide-react';
 
 import { askQuestion, uploadFile, healthCheck } from '../services/api';
@@ -82,7 +82,9 @@ export default function ChatUI() {
   const [uploadMsg,    setUploadMsg]    = useState(null);
   const [quizConcept,  setQuizConcept]  = useState(null);
   const [isQuizOpen,   setIsQuizOpen]   = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null); // { dataUrl, name, size }
   const fileInputRef   = useRef(null);
+  const imageInputRef  = useRef(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -100,20 +102,61 @@ export default function ChatUI() {
     catch { setSystemHealth({ status: 'offline', neo4j_mode: 'offline', total_graph_nodes: 0 }); }
   };
 
+  const processImageFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setSelectedImage({
+        dataUrl: e.target.result,
+        name: file.name || 'Math problem screenshot',
+        size: (file.size / 1024).toFixed(1) + ' KB',
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) processImageFile(file);
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        processImageFile(file);
+        break;
+      }
+    }
+  };
+
   const handleSend = async (textToSend = input) => {
     const q = textToSend.trim();
-    if (!q || loading) return;
-    setMessages(p => [...p, {
-      id: `user-${Date.now()}`, role: 'user', content: q,
+    const imagePayload = selectedImage?.dataUrl || null;
+    if ((!q && !imagePayload) || loading) return;
+
+    const userMsg = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: q || (imagePayload ? 'Solve the mathematical problem in this image.' : ''),
+      image_url: imagePayload,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    }]);
+    };
+
+    setMessages(p => [...p, userMsg]);
     setInput('');
+    setSelectedImage(null);
     setLoading(true);
+
     try {
       const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
-      const res = await askQuestion(q, history);
+      const res = await askQuestion(q, history, 'default_student', imagePayload);
       setMessages(p => [...p, {
-        id: `assistant-${Date.now()}`, role: 'assistant',
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
         content: res.answer,
         identified_concept: res.identified_concept,
         prerequisites: res.prerequisites,
@@ -121,15 +164,19 @@ export default function ChatUI() {
         graph_context: res.graph_context,
         sympy_verification: res.sympy_verification,
         recommended_study_topics: res.recommended_study_topics,
+        extracted_question: res.extracted_question,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
     } catch (err) {
       setMessages(p => [...p, {
-        id: `err-${Date.now()}`, role: 'assistant',
+        id: `err-${Date.now()}`,
+        role: 'assistant',
         content: '⚠️ Unable to complete request. Please verify backend connection.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileUpload = async (e) => {
@@ -292,11 +339,39 @@ export default function ChatUI() {
                   {/* Bubble */}
                   <div className={msg.role === 'user' ? 'bubble-user' : 'bubble-assistant'}
                     style={{ maxWidth: '88%', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div className="prose-math" style={{ fontSize: '0.875rem' }}>
-                      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                        {msg.content}
-                      </ReactMarkdown>
-                    </div>
+                    
+                    {/* User uploaded math image */}
+                    {msg.role === 'user' && msg.image_url && (
+                      <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(0,0,0,0.3)', maxWidth: 360 }}>
+                        <img src={msg.image_url} alt="Uploaded math problem" style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block' }} />
+                      </div>
+                    )}
+
+                    {/* Extracted Math Question Banner on Assistant */}
+                    {msg.role === 'assistant' && msg.extracted_question && (
+                      <div style={{
+                        background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.3)',
+                        borderRadius: 10, padding: '0.65rem 0.85rem', display: 'flex', flexDirection: 'column', gap: '0.35rem'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#93c5fd', fontSize: '0.75rem', fontWeight: 700 }}>
+                          <Camera size={13} />
+                          <span>Transcribed Math Problem from Image:</span>
+                        </div>
+                        <div style={{ color: '#f1f5f9', fontSize: '0.82rem', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(10,14,26,0.6)', padding: '0.4rem 0.6rem', borderRadius: 6 }}>
+                          <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                            {msg.extracted_question}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
+
+                    {msg.content && (
+                      <div className="prose-math" style={{ fontSize: '0.875rem' }}>
+                        <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
 
                     {/* Prerequisites Panel */}
                     {msg.role === 'assistant' && msg.prerequisites?.length > 0 && (
@@ -407,18 +482,63 @@ export default function ChatUI() {
               ))}
             </div>
 
+            {/* Image Preview Box if image is selected */}
+            {selectedImage && (
+              <div style={{
+                padding: '0.4rem 1.5rem 0', maxWidth: 860, margin: '0 auto', width: '100%',
+              }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '0.5rem 0.85rem', background: 'rgba(18, 27, 48, 0.95)',
+                  border: '1px solid rgba(59, 130, 246, 0.4)', borderRadius: 12,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <img src={selectedImage.dataUrl} alt="Attached Preview" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(59,130,246,0.3)' }} />
+                    <div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>{selectedImage.name}</span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>({selectedImage.size})</span>
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: '#93c5fd' }}>Vision AI will transcribe and solve this math problem</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setSelectedImage(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 6, borderRadius: 6 }} title="Remove image">
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Input Area */}
             <div style={{
               padding: '0.75rem 1.5rem 1.25rem', maxWidth: 860, margin: '0 auto', width: '100%',
-              display: 'flex', gap: '0.75rem', alignItems: 'flex-end',
+              display: 'flex', gap: '0.6rem', alignItems: 'flex-end',
             }}>
+              {/* Image Upload Button */}
+              <input type="file" ref={imageInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="btn-ghost"
+                title="Upload Math Question Image (or paste with Ctrl+V)"
+                style={{
+                  height: 48, width: 48, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 12, flexShrink: 0,
+                  borderColor: selectedImage ? '#3b82f6' : undefined,
+                  background: selectedImage ? 'rgba(59,130,246,0.2)' : undefined,
+                }}>
+                <Camera size={19} style={{ color: selectedImage ? '#60a5fa' : 'var(--text-muted)' }} />
+              </button>
+
               <div style={{ flex: 1, position: 'relative' }}>
                 <textarea
                   className="chat-input"
                   value={input}
                   onChange={e => setInput(e.target.value)}
+                  onPaste={handlePaste}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  placeholder="Ask a mathematical question (e.g. 'Explain Integration and its prerequisites')…"
+                  placeholder={selectedImage ? "Add optional instructions or click Send to solve image..." : "Ask a math question or upload/paste an image of a math problem…"}
                   rows={1}
                   style={{
                     width: '100%', padding: '0.85rem 1rem', fontSize: '0.875rem',
@@ -430,9 +550,14 @@ export default function ChatUI() {
               </div>
               <button
                 onClick={() => handleSend()}
-                disabled={!input.trim() || loading}
+                disabled={(!input.trim() && !selectedImage) || loading}
                 className="btn-primary"
-                style={{ height: 48, width: 48, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, flexShrink: 0, opacity: (!input.trim() || loading) ? 0.5 : 1, cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer' }}>
+                style={{
+                  height: 48, width: 48, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 12, flexShrink: 0,
+                  opacity: (!input.trim() && !selectedImage) || loading ? 0.5 : 1,
+                  cursor: (!input.trim() && !selectedImage) || loading ? 'not-allowed' : 'pointer'
+                }}>
                 <Send size={18} />
               </button>
             </div>

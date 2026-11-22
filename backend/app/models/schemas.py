@@ -8,12 +8,13 @@ class ChatMessage(BaseModel):
     content: str
 
 class AskRequest(BaseModel):
-    question: str
+    question: Optional[str] = ""
     history: Optional[List[ChatMessage]] = []
     user_id: Optional[str] = "default_student"
     use_vector_search: Optional[bool] = True
     use_graph_retrieval: Optional[bool] = True
     use_sympy_verification: Optional[bool] = True
+    image_data: Optional[str] = None  # Base64 image (data:image/... or raw base64)
 
 class SymPyVerificationResult(BaseModel):
     is_verified: bool
@@ -49,6 +50,7 @@ class AskResponse(BaseModel):
     graph_context: Optional[GraphContextItem] = None
     sympy_verification: Optional[SymPyVerificationResult] = None
     recommended_study_topics: List[str] = []
+    extracted_question: Optional[str] = None
     model_used: str
 
 class ChatRequest(BaseModel):

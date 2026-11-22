@@ -19,8 +19,8 @@ def ask_question(request: AskRequest, db: Session = Depends(get_db)):
     6. Uses SymPy to independently verify calculations
     7. Updates student progress in database
     """
-    if not request.question or not request.question.strip():
-        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+    if (not request.question or not request.question.strip()) and not request.image_data:
+        raise HTTPException(status_code=400, detail="Please provide a mathematical question or upload an image.")
 
     try:
         response = execute_combined_pipeline(request, db=db)

@@ -22,7 +22,7 @@ from ...core.config import get_settings
 from ..rag.retriever import retrieve_context, format_context_for_prompt
 from ..graph.graph_service import get_graph_service
 from ..math_engine.sympy_service import auto_extract_and_verify, verify_expression
-from .groq_client import chat_completion
+from .groq_client import chat_completion, extract_math_from_image
 from ...models.schemas import (
     AskRequest, AskResponse, GraphContextItem,
     ConceptPrerequisiteInfo, SymPyVerificationResult
@@ -96,8 +96,30 @@ def extract_primary_concept(query: str) -> Optional[str]:
 def execute_combined_pipeline(request: AskRequest, db: Optional[Session] = None) -> AskResponse:
     """
     Executes the complete Graph-Enhanced RAG pipeline.
+    Supports text questions and mathematical question extraction from image uploads.
     """
-    user_q = request.question.strip()
+    user_q = (request.question or "").strip()
+    extracted_question = None
+
+    # Step 0: Image Vision Extraction (Feature 1: Multimodal Math Problem Solving)
+    if request.image_data:
+        logger.info("Image data detected in request. Performing mathematical vision transcription...")
+        extracted_question = extract_math_from_image(request.image_data)
+        if extracted_question:
+            logger.info(f"Extracted question from image: {extracted_question}")
+            generic_phrases = {
+                "", "solve", "solve this", "solve this problem", "what is this",
+                "calculate", "evaluate", "help me solve this", "solve the problem in this image",
+                "solve the problem in the image"
+            }
+            if user_q.lower().strip() in generic_phrases:
+                user_q = extracted_question
+            else:
+                user_q = f"Question from uploaded image:\n{extracted_question}\n\nAdditional user instructions: {user_q}"
+        else:
+            if not user_q:
+                user_q = "Please solve the mathematical problem provided in the uploaded image."
+
     logger.info(f"Processing question: {user_q}")
 
     # 1. Query Understanding & Concept Identification
@@ -224,5 +246,6 @@ def execute_combined_pipeline(request: AskRequest, db: Optional[Session] = None)
         graph_context=graph_context_item,
         sympy_verification=sympy_result,
         recommended_study_topics=recommended_topics[:4],
+        extracted_question=extracted_question,
         model_used=settings.model_name
     )

@@ -21,6 +21,60 @@ def get_groq_client() -> Optional[Groq]:
         return None
     return Groq(api_key=api_key)
 
+def extract_math_from_image(image_data: str) -> Optional[str]:
+    """
+    Extract and transcribe mathematical equations, problems, or questions from an image.
+    Supports base64 data URLs ('data:image/...;base64,...') or raw base64.
+    Uses multimodal Qwen vision on Groq.
+    """
+    client = get_groq_client()
+    if not client:
+        logger.warning("Groq client not available for image vision extraction.")
+        return None
+
+    # Format data URL if needed
+    if not image_data.startswith("data:image/"):
+        image_url = f"data:image/jpeg;base64,{image_data}"
+    else:
+        image_url = image_data
+
+    prompt = (
+        "You are an expert mathematical OCR and problem extractor. "
+        "Carefully inspect the image and transcribe the mathematical problem, question, or equations exactly. "
+        "Extract all variables, numbers, operations, symbols, and written instructions precisely. "
+        "Format mathematical expressions using standard LaTeX notation ($...$ or $$...$$). "
+        "Return ONLY the transcribed mathematical question or problem, with no introductory text or conversational filler."
+    )
+
+    # Models with vision capability on Groq
+    vision_models = ["qwen/qwen3.8-27b"]
+
+    for model in vision_models:
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": image_url}}
+                        ]
+                    }
+                ],
+                temperature=0.1,
+                max_tokens=600
+            )
+            extracted = response.choices[0].message.content.strip()
+            if extracted:
+                logger.info(f"Successfully transcribed math problem from image using {model}: {extracted[:120]}")
+                return extracted
+        except Exception as e:
+            logger.warning(f"Image vision transcription failed with {model}: {e}")
+            continue
+
+    return None
+
 def chat_completion(messages: List[Dict[str, str]], temperature: float = 0.2, max_tokens: int = 2048) -> str:
     """Execute Groq chat completion with model fallback cascade."""
     client = get_groq_client()
