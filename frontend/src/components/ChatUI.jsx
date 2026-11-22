@@ -6,13 +6,12 @@ import 'katex/dist/katex.min.css';
 import {
   Send, Layers, Upload, CheckCircle2, AlertTriangle,
   BarChart3, Calculator, BookOpen, ArrowRight, Database,
-  Network, Cpu, Atom, Infinity, FlaskConical, Sigma
+  Network, Cpu, Atom, Infinity, Sigma
 } from 'lucide-react';
 
 import { askQuestion, uploadFile, healthCheck } from '../services/api';
 import GraphExplorer from './GraphExplorer';
 import ProgressDashboard from './ProgressDashboard';
-import FormulaVerifier from './FormulaVerifier';
 import AssessmentModal from './AssessmentModal';
 
 /* ─── Floating Math Symbols Component ───────────────────────── */
@@ -70,7 +69,6 @@ const TABS = [
   { id: 'chat',     label: 'Math Chat',       icon: Atom },
   { id: 'graph',    label: 'Graph Explorer',  icon: Network },
   { id: 'progress', label: 'Learning',        icon: BarChart3 },
-  { id: 'verifier', label: 'SymPy Verifier',  icon: FlaskConical },
 ];
 
 /* ─── Main Component ─────────────────────────────────────────── */
@@ -182,9 +180,6 @@ export default function ChatUI() {
                 border: '1px solid rgba(79,142,247,0.3)', borderRadius: 20, padding: '1px 8px', fontWeight: 700, letterSpacing: '0.3px'
               }}>Graph-Enhanced RAG v2.0</span>
             </div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 1 }}>
-              FAISS Vector Search • Neo4j Knowledge Graph • SymPy Symbolic Engine
-            </div>
           </div>
         </div>
 
@@ -211,7 +206,7 @@ export default function ChatUI() {
           })}
         </nav>
 
-        {/* Right: Upload + Health */}
+        {/* Right: Upload */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf,.txt,.md" className="hidden" />
           <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
@@ -219,23 +214,6 @@ export default function ChatUI() {
             <Upload size={13} style={{ color: 'var(--accent)' }} />
             {uploading ? 'Indexing…' : 'Upload PDF/TXT'}
           </button>
-
-          {systemHealth && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              fontSize: '0.72rem', color: 'var(--text-muted)',
-              background: 'rgba(10,14,26,0.6)', border: '1px solid var(--border)',
-              borderRadius: 8, padding: '4px 10px',
-            }}>
-              <span style={{
-                width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                background: systemHealth.status === 'healthy' ? 'var(--success)' : 'var(--danger)',
-                boxShadow: systemHealth.status === 'healthy' ? '0 0 6px var(--success)' : 'none',
-                animation: systemHealth.status === 'healthy' ? 'dot-pulse 2s infinite' : 'none',
-              }} />
-              <span>Graph: {systemHealth.neo4j_mode === 'live_neo4j' ? 'Live Neo4j' : `Active (${systemHealth.total_graph_nodes ?? 60} nodes)`}</span>
-            </div>
-          )}
         </div>
       </header>
 
@@ -270,10 +248,6 @@ export default function ChatUI() {
               onStartQuiz={topic => { setQuizConcept(topic); setIsQuizOpen(true); }}
             />
           </div>
-        ) : activeTab === 'verifier' ? (
-          <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem', maxWidth: 900, margin: '0 auto', width: '100%' }}>
-            <FormulaVerifier />
-          </div>
         ) : (
           /* ── CHAT PANEL ─────────────────────────────────────── */
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -296,12 +270,9 @@ export default function ChatUI() {
                     ∫
                   </div>
                   <div>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 0.25rem' }}>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
                       How can I help you with Mathematics today?
                     </h2>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, maxWidth: 500 }}>
-                      Ask any calculus, algebra, or probability problem. MathGPT explores prerequisites with the Knowledge Graph, retrieves document context, and verifies with SymPy.
-                    </p>
                   </div>
                 </div>
               )}
