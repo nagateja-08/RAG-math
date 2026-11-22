@@ -76,18 +76,7 @@ const TABS = [
 /* ─── Main Component ─────────────────────────────────────────── */
 export default function ChatUI() {
   const [activeTab, setActiveTab]   = useState('chat');
-  const [messages,  setMessages]    = useState([{
-    id: 'welcome', role: 'assistant',
-    content:
-      `# Welcome to MathGPT 🧮\n\n` +
-      `I am your **Graph-Enhanced RAG Intelligent Mathematical Learning Platform**.\n\n` +
-      `### How I work:\n` +
-      `- **Knowledge Graph (Neo4j)**: Understands prerequisites, formulas, and conceptual dependencies.\n` +
-      `- **Vector Retrieval (FAISS)**: Retrieves grounded mathematical explanations from documents.\n` +
-      `- **Symbolic Math Engine (SymPy)**: Independently verifies formulas, derivatives, and calculations.\n\n` +
-      `Ask any math question below, upload your textbooks, or explore the interactive Knowledge Graph!`,
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  }]);
+  const [messages,  setMessages]    = useState([]);
   const [input,        setInput]        = useState('');
   const [loading,      setLoading]      = useState(false);
   const [systemHealth, setSystemHealth] = useState(null);
@@ -289,7 +278,34 @@ export default function ChatUI() {
           /* ── CHAT PANEL ─────────────────────────────────────── */
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: 860, margin: '0 auto', width: '100%' }}>
+            <div style={{
+              flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column',
+              gap: '1.25rem', maxWidth: 860, margin: '0 auto', width: '100%',
+              justifyContent: messages.length === 0 ? 'center' : 'flex-start',
+            }}>
+              {messages.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 14,
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))',
+                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.6rem', color: '#60a5fa',
+                    boxShadow: '0 0 25px rgba(59, 130, 246, 0.2)'
+                  }}>
+                    ∫
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 0.25rem' }}>
+                      How can I help you with Mathematics today?
+                    </h2>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, maxWidth: 500 }}>
+                      Ask any calculus, algebra, or probability problem. MathGPT explores prerequisites with the Knowledge Graph, retrieves document context, and verifies with SymPy.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {messages.map(msg => (
                 <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
                   {/* Role Label */}
@@ -388,7 +404,7 @@ export default function ChatUI() {
             </div>
 
             {/* Starter Suggestions */}
-            {messages.length <= 1 && (
+            {messages.length === 0 && (
               <div style={{ padding: '0 1.5rem 0.75rem', maxWidth: 860, margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
                 {SUGGESTIONS.map((s, idx) => (
                   <button key={idx} onClick={() => handleSend(s.prompt)}
