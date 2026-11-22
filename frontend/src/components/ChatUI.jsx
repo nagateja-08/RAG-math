@@ -6,13 +6,14 @@ import 'katex/dist/katex.min.css';
 import {
   Send, Layers, Upload, CheckCircle2, AlertTriangle,
   BarChart3, Calculator, BookOpen, ArrowRight, Database,
-  Network, Cpu, Atom, Infinity, Sigma, Camera, X, Image as ImageIcon
+  Network, Cpu, Atom, Infinity, Sigma, Camera, X, Image as ImageIcon, User
 } from 'lucide-react';
 
 import { askQuestion, uploadFile, healthCheck } from '../services/api';
 import GraphExplorer from './GraphExplorer';
 import ProgressDashboard from './ProgressDashboard';
 import AssessmentModal from './AssessmentModal';
+import UserSignInModal from './UserSignInModal';
 
 /* ─── Floating Math Symbols Component ───────────────────────── */
 const FLOAT_SYMBOLS = ['∫', '∑', '∂', '√', '∞', 'π', 'θ', 'Δ', '∇', 'λ', 'α', 'β', 'φ', 'Ω', '∮', '∏', 'dx', 'dy', '→', '≈'];
@@ -60,12 +61,15 @@ const QUICK_MATH_SYMBOLS = [
 function formatMathContent(content) {
   if (!content) return '';
   let text = content;
-  // Convert \[ ... \] to $$ ... $$
-  text = text.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `\n$$\n${math.trim()}\n$$\n`);
+  // Convert \[ ... \] to $$ ... $$ with generous double newlines
+  text = text.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `\n\n$$\n${math.trim()}\n$$\n\n`);
   // Convert \( ... \) to $ ... $
   text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => `$${math.trim()}$`);
   // Convert unescaped [ \frac{...} ] blocks to $$ \frac{...} $$
-  text = text.replace(/(?:^|\n)\s*\[\s*([^\]\n]+?(?:\\(?:frac|text|sum|int|sqrt|lim|cdot|times|alpha|beta|theta|pi|le|ge|partial)|[\^_=])[^\]\n]*?)\s*\](?:\s*\.?)(?=\n|$)/g, '\n$$\n$1\n$$\n');
+  text = text.replace(/(?:^|\n)\s*\[\s*([^\]\n]+?(?:\\(?:frac|text|sum|int|sqrt|lim|cdot|times|alpha|beta|theta|pi|le|ge|partial)|[\^_=])[^\]\n]*?)\s*\](?:\s*\.?)(?=\n|$)/g, '\n\n$$\n$1\n$$\n\n');
+  // Ensure clear spacing before every Step header so each step is cleanly separated
+  text = text.replace(/([^\n])\n+(Step\s*\d+:)/gi, '$1\n\n**$2**');
+  text = text.replace(/([^\n])\n+(\*\*Step\s*\d+:)/gi, '$1\n\n$2');
   return text;
 }
 
@@ -96,6 +100,15 @@ export default function ChatUI() {
   const [quizConcept,  setQuizConcept]  = useState(null);
   const [isQuizOpen,   setIsQuizOpen]   = useState(false);
   const [selectedImage, setSelectedImage] = useState(null); // { dataUrl, name, size }
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('mathgpt_user');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return { id: 'student_1', name: 'Student 1' };
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   const fileInputRef   = useRef(null);
   const imageInputRef  = useRef(null);
   const messagesEndRef = useRef(null);
@@ -166,7 +179,7 @@ export default function ChatUI() {
 
     try {
       const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
-      const res = await askQuestion(q, history, 'default_student', imagePayload);
+      const res = await askQuestion(q, history, currentUser.id, imagePayload);
       setMessages(p => [...p, {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
@@ -215,6 +228,8 @@ export default function ChatUI() {
       <FloatingSymbols />
       <AssessmentModal concept={quizConcept} isOpen={isQuizOpen}
         onClose={() => setIsQuizOpen(false)} onComplete={checkHealth} />
+      <UserSignInModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser} onUserChange={setCurrentUser} />
 
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <header className="glass" style={{
@@ -266,13 +281,37 @@ export default function ChatUI() {
           })}
         </nav>
 
-        {/* Right: Upload */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {/* Right: Upload & User Sign In Account */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf,.txt,.md" className="hidden" />
           <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-            className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', padding: '0.4rem 0.9rem' }}>
+            className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', padding: '0.4rem 0.85rem' }}>
             <Upload size={13} style={{ color: 'var(--accent)' }} />
             {uploading ? 'Indexing…' : 'Upload PDF/TXT'}
+          </button>
+
+          {/* User Sign In / Profile Button */}
+          <button
+            onClick={() => setIsAuthModalOpen(true)}
+            className="btn-ghost"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.45rem',
+              padding: '0.35rem 0.75rem', borderRadius: 10,
+              fontSize: '0.78rem',
+              borderColor: 'rgba(59, 130, 246, 0.4)',
+              background: 'rgba(59, 130, 246, 0.1)',
+            }}
+            title={`Account: ${currentUser?.name} (${currentUser?.id}). Click to switch user.`}
+          >
+            <div style={{
+              width: 22, height: 22, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, fontSize: '0.68rem', color: '#fff'
+            }}>
+              {(currentUser?.name || 'S').charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontWeight: 600, color: '#f1f5f9' }}>{currentUser?.name || 'Sign In'}</span>
           </button>
         </div>
       </header>
@@ -304,6 +343,8 @@ export default function ChatUI() {
         ) : activeTab === 'progress' ? (
           <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem', maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <ProgressDashboard
+              currentUser={currentUser}
+              onOpenSignIn={() => setIsAuthModalOpen(true)}
               onSelectTopic={topic => { setActiveTab('chat'); handleSend(`Explain ${topic} in detail with step-by-step mathematical examples.`); }}
               onStartQuiz={topic => { setQuizConcept(topic); setIsQuizOpen(true); }}
             />

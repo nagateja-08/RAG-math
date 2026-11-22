@@ -223,17 +223,40 @@ code, pre, .font-mono {
 /* ─── Prose Math Markdown Styling ────────────────────────────── */
 .prose-math {
   color: #e2e8f0;
-  line-height: 1.75;
+  line-height: 1.8;
+}
+.prose-math p {
+  margin-top: 0.6rem;
+  margin-bottom: 1.35rem;
+  line-height: 1.8;
+}
+.prose-math p:first-child {
+  margin-top: 0;
+}
+.prose-math p:last-child {
+  margin-bottom: 0;
 }
 .prose-math h1, .prose-math h2, .prose-math h3, .prose-math h4 {
   color: #f8fafc;
   font-weight: 700;
-  margin-top: 1rem;
-  margin-bottom: 0.4rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
 }
-.prose-math h2 { font-size: 1.15rem; color: #93c5fd; }
-.prose-math h3 { font-size: 1.05rem; color: #c4b5fd; }
-.prose-math strong { color: #bfdbfe; font-weight: 600; }
+.prose-math h2 { font-size: 1.2rem; color: #93c5fd; }
+.prose-math h3 {
+  font-size: 1.1rem;
+  color: #c4b5fd;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+  padding-bottom: 0.35rem;
+  margin-top: 1.4rem;
+  margin-bottom: 1rem;
+}
+.prose-math strong {
+  color: #93c5fd;
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 0.4rem;
+}
 .prose-math code {
   background: rgba(59, 130, 246, 0.15);
   border: 1px solid rgba(59, 130, 246, 0.3);
@@ -248,20 +271,26 @@ code, pre, .font-mono {
   border-radius: 10px;
   padding: 1rem;
   overflow-x: auto;
-  margin: 0.75rem 0;
+  margin: 1rem 0;
 }
 .prose-math ul, .prose-math ol {
   padding-left: 1.4rem;
-  margin: 0.5rem 0;
+  margin: 0.9rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
-.prose-math li { margin-bottom: 0.25rem; }
+.prose-math li {
+  margin-bottom: 0.4rem;
+  line-height: 1.75;
+}
 
 /* ─── KaTeX Rendering Tweaks ─────────────────────────────────── */
 .katex-display {
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0.6rem 0.2rem;
-  margin: 0.75rem 0;
+  padding: 0.75rem 0.4rem;
+  margin: 1.25rem 0 !important;
 }
 .katex {
   color: #dbeafe !important;
